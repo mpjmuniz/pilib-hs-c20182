@@ -26,7 +26,7 @@ data ExpPiAut = ExpPiAut { val :: ValueStack,
  - automata functions evaluation
 -}
 evalSum :: ExpPiAut -> Aexpr -> Aexpr -> ExpPiAut
-evalSum (ExpPiAut v c) aex1 aex2 = ExpPiAut {cnt = ("SUM" : show aex2 : show aex1 : c ), val = v}
+evalSum (ExpPiAut v c) aex1 aex2 = ExpPiAut {cnt = (show aex2 : show aex1 : "SUM" : c ), val = v}
 
 -- TODO: implement eval
 eval :: ExpPiAut -> ExpPiAut
