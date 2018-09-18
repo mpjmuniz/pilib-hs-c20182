@@ -14,7 +14,31 @@ data Bexpr = Boo Bool | Eq Bexpr Bexpr | Not Bexpr deriving Show
 data Statement = Exp Expr | Command Cmd deriving Show
 data Cmd = Assign Identifier Expr | Loop Bexpr Cmd | CSeq Cmd Cmd deriving Show
 data Keyword = KWSum | KWMul | KWSub | KWEq | KWNot deriving Show
-
+{-
+ -Examples
+Identifier: Id "Minha Soma"
+Expr: Aexp (Num 5) ou 
+	Bexp (Boo True) ou 
+	Idtf (Id "Minha Soma") ou 
+	Kw KWSum
+Aexpr: Num 5 ou 
+	Sum (Num 3) (Num 2) ou 
+	Sub (Num 5) (Num 1) ou 
+	Mul (Num 2) (Num 4)
+Bexpr: Boo True ou 
+	Eq (Boo True) (Boo False) ou 
+	Not (Boo True)
+Statement: Exp (Aexp (Num 5)) ou 
+	Command (Assign (Id "Minha Soma") (Aexp (Sum (Num 3) (Num 2))))
+Cmd: Assign (Id "Minha Soma") (Aexp (Sum (Num 3) (Num 2)))) ou 
+	Loop (Boo True) (Assign (Id "Minha Soma") (Aexp (Sum (Num 3) (Num 2)))) ou 
+	CSeq (Assign (Id "Minha Soma") (Aexp (Sum (Num 3) (Num 2)))) (Assign (Id "Minha Soma") (Aexp (Sum (Num 3) (Num 2))))
+Keyword: KWSum ou 
+	KWMul ou 
+	KWSub ou 
+	KWEq ou 
+	KWNot
+ - -}
 data Value = Bo { bval :: Bool } | In { ival :: Int} deriving Show
 {- |
  - Automata definition
