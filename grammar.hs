@@ -23,12 +23,9 @@ data Value = Bo { bval :: Bool } | In { ival :: Int } | Idt { idval :: Identifie
 {- |
  - Automata definition
  -}
+
 type ValueStack = [Value]
 type ControlStack = [Expr]
-{-data cpa= cpa{ val :: ValueStack,
-                           cnt :: ControlStack
-                         } deriving Show-}
-
 type Loc = Integer
 type Env = [(Value,Expr)]
 type Sto = [(Expr,Value)]
@@ -71,7 +68,34 @@ eval cpa@(CmdPiAut e s l v c) = case (head c) of
                                  Kw KWOr                -> eval cpa{cnt = tail c, val = Bo (bval (head v) || bval (head (tail v))) : tail (tail v)}
                                  Kw KWAnd               -> eval cpa{cnt = tail c, val = Bo (bval (head v) && bval (head (tail v))) : tail (tail v)}
                                  Kw KWNot               -> eval cpa{cnt = tail c, val = Bo (not (bval (head v))) : tail v}
+
 {- Example expressions
-cpa[] [Sum (Num 5) (Num 2)]
+Num 2
+Sum (Num 1) (Num 1)
+Sub (Num 1) (Num 1)
+Mul (Num 1) (Num 1)
+Boo True
+Eq (Boo True) (Boo False)
+Not (Boo True)
+Gt (Num 2) (Num 1)
+Ge (Num 2) (Num 2)
+Lt (Num 1) (Num 2)
+Le (Num 2) (Num 2)
+And (Boo True) (Boo True)
+Or (Boo True) (Boo False)
+Id "Meu ID"
+Idtf (Id "Meu ID")
+KWSum
+Kw KWSum
+Assign (Id "Meu ID") (Sum (Num 1) (Num 1))
+Comm (Assign (Id "Meu ID") (Sum (Num 1) (Num 1)))
+Aexp (Sum (Num 1) (Num 1))
+Bexp (Eq (Boo True) (Boo False))
+Exp (Aexp (Sum (Num 1) (Num 1)))
+Command (Assign (Id "Meu ID") (Sum (Num 1) (Num 1)))
+Loop (Eq (Boo True) (Boo False)) (Assign (Id "Meu ID") (Sum (Num 1) (Num 1)))
+CSeq (Assign (Id "Meu ID") (Sum (Num 1) (Num 1))) (Assign (Id "Meu ID denovo") (Sum (Num 1) (Num 1))
+
+let exp = Sum (Num 5) (Num 2)
 
 -}

@@ -23,12 +23,9 @@ data Value = Bo { bval :: Bool } | In { ival :: Int } | Idt { idval :: Identifie
 {- |
  - Automata definition
  -}
+
 type ValueStack = [Value]
 type ControlStack = [Expr]
-{-data ExpPiAut = ExpPiAut { val :: ValueStack,
-                           cnt :: ControlStack
-                         } deriving Show-}
-
 type Loc = Integer
 type Env = [(Value,Expr)]
 type Sto = [(Expr,Value)]
@@ -38,47 +35,65 @@ data CmdPiAut = CmdPiAut { env :: Env,
                            val :: ValueStack,
                            cnt :: ControlStack
                          }
-{- |
- - automata functions evaluation
-eval :: ExpPiAut -> ExpPiAut
-eval (ExpPiAut v []) = ExpPiAut v []
-eval (ExpPiAut v c) = case (head c) of
-
--}
 -- TODO: rewrite fromJust lookup key map to only a lookup as composition of both fns
 eval :: CmdPiAut -> CmdPiAut
 eval cpa@(CmdPiAut e s l v c) = case (head c) of
                                  Comm (Assign idtf exp) -> eval cpa{cnt = exp : Kw KWAssign : tail c, val = Idt idtf : v} 
                                  Comm (CSeq cmd1 cmd2)  -> eval cpa{cnt = Comm cmd1 : Comm cmd2 : tail c}
                                  Comm (Loop bexp cmd)   -> eval cpa{cnt = Bexp bexp : Kw KWLoop : tail c, val = Comd cmd : Lp bexp cmd : v}
-                                 Aexp (Sum aex1 aex2) -> eval ExpPiAut {cnt = Aexp aex1 : Aexp aex2 : Kw KWSum : tail c, val = v} 
-                                 Aexp (Sub aex1 aex2) -> eval ExpPiAut {cnt = Aexp aex1 : Aexp aex2 : Kw KWSub : tail c, val = v}
-                                 Aexp (Mul aex1 aex2) -> eval ExpPiAut {cnt = Aexp aex1 : Aexp aex2 : Kw KWMul : tail c, val = v}
-                                 Bexp (Eq  exp1 exp2) -> eval ExpPiAut {cnt = Bexp exp1 : Bexp exp2 : Kw KWEq  : tail c, val = v} 
-                                 Bexp (Or  exp1 exp2) -> eval ExpPiAut {cnt = Bexp exp1 : Bexp exp2 : Kw KWOr  : tail c, val = v} 
-                                 Bexp (And exp1 exp2) -> eval ExpPiAut {cnt = Bexp exp1 : Bexp exp2 : Kw KWAnd  : tail c, val = v} 
-                                 Bexp (Lt  exp1 exp2) -> eval ExpPiAut {cnt = Bexp exp1 : Bexp exp2 : Kw KWLt  : tail c, val = v} 
-                                 Bexp (Le  exp1 exp2) -> eval ExpPiAut {cnt = Bexp exp1 : Bexp exp2 : Kw KWLe  : tail c, val = v} 
-                                 Bexp (Ge  exp1 exp2) -> eval ExpPiAut {cnt = Bexp exp1 : Bexp exp2 : Kw KWGe  : tail c, val = v} 
-                                 Bexp (Gt  exp1 exp2) -> eval ExpPiAut {cnt = Bexp exp1 : Bexp exp2 : Kw KWGt  : tail c, val = v} 
-                                 Bexp (Not ex)        -> eval ExpPiAut {cnt = Bexp ex : Kw KWNot : tail c, val = v}
-                                 Aexp (Num ival)      -> eval ExpPiAut {cnt = tail c, val = In ival : v}
-                                 Bexp (Boo bval)      -> eval ExpPiAut {cnt = tail c, val = Bo bval : v}
-                                 Idtf (Id str)        -> eval cpa{cnt = tail c, val = fromJust (lookup (fromJust (lookup (Idt (Id str)) e)) s) : v }
-                                 Kw KWAssign          -> eval cpa{cnt = tail c, val = tail (tail v), sto = (fromJust (lookup (head (tail v)) e), head v) : s }
+                                 Aexp (Sum aex1 aex2)   -> eval cpa{cnt = Aexp aex1 : Aexp aex2 : Kw KWSum : tail c, val = v} 
+                                 Aexp (Sub aex1 aex2)   -> eval cpa{cnt = Aexp aex1 : Aexp aex2 : Kw KWSub : tail c, val = v}
+                                 Aexp (Mul aex1 aex2)   -> eval cpa{cnt = Aexp aex1 : Aexp aex2 : Kw KWMul : tail c, val = v}
+                                 Bexp (Eq  exp1 exp2)   -> eval cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWEq  : tail c, val = v} 
+                                 Bexp (Or  exp1 exp2)   -> eval cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWOr  : tail c, val = v} 
+                                 Bexp (And exp1 exp2)   -> eval cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWAnd  : tail c, val = v} 
+                                 Bexp (Lt  exp1 exp2)   -> eval cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWLt  : tail c, val = v} 
+                                 Bexp (Le  exp1 exp2)   -> eval cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWLe  : tail c, val = v} 
+                                 Bexp (Ge  exp1 exp2)   -> eval cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWGe  : tail c, val = v} 
+                                 Bexp (Gt  exp1 exp2)   -> eval cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWGt  : tail c, val = v} 
+                                 Bexp (Not ex)          -> eval cpa{cnt = Bexp ex : Kw KWNot : tail c, val = v}
+                                 Aexp (Num ival)        -> eval cpa{cnt = tail c, val = In ival : v}
+                                 Bexp (Boo bval)        -> eval cpa{cnt = tail c, val = Bo bval : v}
+                                 Idtf (Id str)          -> eval cpa{cnt = tail c, val = fromJust (lookup (fromJust (lookup (Idt (Id str)) e)) s) : v }
+                                 Kw KWAssign            -> eval cpa{cnt = tail c, val = tail (tail v), sto = (fromJust (lookup (head (tail v)) e), head v) : s }
                                  --Kw KWLoop            -> eval cpa{val = tail v, if beval (head v) of }
-                                 Kw KWSum             -> eval ExpPiAut {cnt = tail c, val = In (ival (head v) + ival (head (tail v))) : tail (tail v)}
-                                 Kw KWSub             -> eval ExpPiAut {cnt = tail c, val = In (ival (head v) - ival (head (tail v))) : tail (tail v)}
-                                 Kw KWMul             -> eval ExpPiAut {cnt = tail c, val = In (ival (head v) * ival (head (tail v))) : tail (tail v)}
-                                 Kw KWEq              -> eval ExpPiAut {cnt = tail c, val = Bo (bval (head v) == bval (head (tail v))) : tail (tail v)}
-                                 Kw KWLe              -> eval ExpPiAut {cnt = tail c, val = Bo (bval (head v) <= bval (head (tail v))) : tail (tail v)}
-                                 Kw KWLt              -> eval ExpPiAut {cnt = tail c, val = Bo (bval (head v) < bval (head (tail v))) : tail (tail v)}
-                                 Kw KWGe              -> eval ExpPiAut {cnt = tail c, val = Bo (bval (head v) >= bval (head (tail v))) : tail (tail v)}
-                                 Kw KWGt              -> eval ExpPiAut {cnt = tail c, val = Bo (bval (head v) > bval (head (tail v))) : tail (tail v)}
-                                 Kw KWOr              -> eval ExpPiAut {cnt = tail c, val = Bo (bval (head v) || bval (head (tail v))) : tail (tail v)}
-                                 Kw KWAnd             -> eval ExpPiAut {cnt = tail c, val = Bo (bval (head v) && bval (head (tail v))) : tail (tail v)}
-                                 Kw KWNot             -> eval ExpPiAut {cnt = tail c, val = Bo (not (bval (head v))) : tail v}
+                                 Kw KWSum               -> eval cpa{cnt = tail c, val = In (ival (head v) + ival (head (tail v))) : tail (tail v)}
+                                 Kw KWSub               -> eval cpa{cnt = tail c, val = In (ival (head v) - ival (head (tail v))) : tail (tail v)}
+                                 Kw KWMul               -> eval cpa{cnt = tail c, val = In (ival (head v) * ival (head (tail v))) : tail (tail v)}
+                                 Kw KWEq                -> eval cpa{cnt = tail c, val = Bo (bval (head v) == bval (head (tail v))) : tail (tail v)}
+                                 Kw KWLe                -> eval cpa{cnt = tail c, val = Bo (bval (head v) <= bval (head (tail v))) : tail (tail v)}
+                                 Kw KWLt                -> eval cpa{cnt = tail c, val = Bo (bval (head v) < bval (head (tail v))) : tail (tail v)}
+                                 Kw KWGe                -> eval cpa{cnt = tail c, val = Bo (bval (head v) >= bval (head (tail v))) : tail (tail v)}
+                                 Kw KWGt                -> eval cpa{cnt = tail c, val = Bo (bval (head v) > bval (head (tail v))) : tail (tail v)}
+                                 Kw KWOr                -> eval cpa{cnt = tail c, val = Bo (bval (head v) || bval (head (tail v))) : tail (tail v)}
+                                 Kw KWAnd               -> eval cpa{cnt = tail c, val = Bo (bval (head v) && bval (head (tail v))) : tail (tail v)}
+                                 Kw KWNot               -> eval cpa{cnt = tail c, val = Bo (not (bval (head v))) : tail v}
+
 {- Example expressions
-ExpPiAut [] [Sum (Num 5) (Num 2)]
+Num 2
+Sum (Num 1) (Num 1)
+Sub (Num 1) (Num 1)
+Mul (Num 1) (Num 1)
+Boo True
+Eq (Boo True) (Boo False)
+Not (Boo True)
+Gt (Num 2) (Num 1)
+Ge (Num 2) (Num 2)
+Lt (Num 1) (Num 2)
+Le (Num 2) (Num 2)
+And (Boo True) (Boo True)
+Or (Boo True) (Boo False)
+Id "Meu ID"
+Idtf (Id "Meu ID")
+KWSum
+Kw KWSum
+Assign (Id "Meu ID") (Sum (Num 1) (Num 1))
+Comm (Assign (Id "Meu ID") (Sum (Num 1) (Num 1)))
+Aexp (Sum (Num 1) (Num 1))
+Bexp (Eq (Boo True) (Boo False))
+Exp (Aexp (Sum (Num 1) (Num 1)))
+Command (Assign (Id "Meu ID") (Sum (Num 1) (Num 1)))
+
+let exp = Sum (Num 5) (Num 2)
 
 -}
