@@ -2,13 +2,13 @@
 
 import Data.Typeable
 import Data.Maybe
-
+import qualified Data.Map.Strict as Map
 {- |
  - Pi-lib expressions. 
  -
  - These will be used futurely by the parser, and will be returned according to the tokens found in the imp program.
 -}
-data Identifier = Id String deriving (Show, Eq)
+data Identifier = Id String deriving (Show, Eq, Ord)
 data Expr = Aexp Aexpr | Bexp Bexpr | Idtf Identifier | Kw Keyword | Comm Cmd deriving (Show, Eq)
 data Aexpr = Num Int | Sum Aexpr Aexpr | Sub Aexpr Aexpr | Mul Aexpr Aexpr deriving (Show, Eq)
 data Bexpr = Boo Bool | Eq Bexpr Bexpr | Not Bexpr | Gt Aexpr Aexpr | Ge Aexpr Aexpr 
@@ -27,18 +27,22 @@ data Value = Bo { bval :: Bool } | In { ival :: Int } | Idt { idval :: Identifie
 type ValueStack = [Value]
 type ControlStack = [Expr]
 type Loc = Integer
-type Env = [(Value,Expr)]
-type Sto = [(Expr,Value)]
-data CmdPiAut = CmdPiAut { env :: Env,
-                           sto :: Sto,
+
+--[(Value,Expr)] identifier -> location
+--[(Expr,Value)] location -> value
+data CmdPiAut = CmdPiAut { env :: Map.Map Identifier Loc,
+                           sto :: Map.Map Loc Value,
                            val :: ValueStack,
                            cnt :: ControlStack
                          } deriving Show
--- TODO: rewrite fromJust lookup key map to only a lookup as composition of both fns
+
+lookup' :: Ord k => k -> Map.Map k a -> a
+lookup' k m = fromJust $ Map.lookup k m
+
 eval :: CmdPiAut -> CmdPiAut
-eval cpa@(CmdPiAut {cnt = []})= cpa
-eval cpa@(CmdPiAut e s v c) = case (head c) of
-                                 Comm (Assign idtf exp) -> eval cpa{cnt = exp : Kw KWAssign : tail c, val = Idt idtf : v} 
+eval cpa@(CmdPiAut {cnt = []}) = cpa
+eval cpa@(CmdPiAut e s v c)    = case (head c) of
+                                 Comm (Assign idtf exp) -> eval cpa{cnt = exp : Kw KWAssign : tail c, val = Idt idtf : v} -- TODO: check for "S' = S/[I->T]"
                                  Comm (CSeq cmd1 cmd2)  -> eval cpa{cnt = Comm cmd1 : Comm cmd2 : tail c}
                                  Comm (Loop bexp cmd)   -> eval cpa{cnt = Bexp bexp : Kw KWLoop : tail c, val = Comd cmd : Lp bexp cmd : v}
                                  Aexp (Sum aex1 aex2)   -> eval cpa{cnt = Aexp aex1 : Aexp aex2 : Kw KWSum : tail c} 
@@ -46,17 +50,20 @@ eval cpa@(CmdPiAut e s v c) = case (head c) of
                                  Aexp (Mul aex1 aex2)   -> eval cpa{cnt = Aexp aex1 : Aexp aex2 : Kw KWMul : tail c}
                                  Bexp (Eq  exp1 exp2)   -> eval cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWEq  : tail c} 
                                  Bexp (Or  exp1 exp2)   -> eval cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWOr  : tail c} 
-                                 Bexp (And exp1 exp2)   -> eval cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWAnd  : tail c} 
+                                 Bexp (And exp1 exp2)   -> eval cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWAnd : tail c} 
                                  Bexp (Lt  exp1 exp2)   -> eval cpa{cnt = Aexp exp1 : Aexp exp2 : Kw KWLt  : tail c} 
                                  Bexp (Le  exp1 exp2)   -> eval cpa{cnt = Aexp exp1 : Aexp exp2 : Kw KWLe  : tail c} 
                                  Bexp (Ge  exp1 exp2)   -> eval cpa{cnt = Aexp exp1 : Aexp exp2 : Kw KWGe  : tail c} 
                                  Bexp (Gt  exp1 exp2)   -> eval cpa{cnt = Aexp exp1 : Aexp exp2 : Kw KWGt  : tail c} 
-                                 Bexp (Not ex)          -> eval cpa{cnt = Bexp ex : Kw KWNot : tail c, val = v}
+                                 Bexp (Not ex)          -> eval cpa{cnt = Bexp ex : Kw KWNot : tail c}
                                  Aexp (Num ival)        -> eval cpa{cnt = tail c, val = In ival : v}
                                  Bexp (Boo bval)        -> eval cpa{cnt = tail c, val = Bo bval : v}
-                                 Idtf (Id str)          -> eval cpa{cnt = tail c, val = fromJust (lookup (fromJust (lookup (Idt (Id str)) e)) s) : v }
-                                 Kw KWAssign            -> eval cpa{cnt = tail c, val = tail (tail v), sto = (fromJust (lookup (head (tail v)) e), head v) : s }
-                                 --Kw KWLoop              -> eval cpa{val = tail v, if (beval (head v)) of }
+                                 Idtf (Id str)          -> eval cpa{cnt = tail c, val = lookup' (lookup' (Id str) e) s : v}
+                                 Kw KWAssign            -> eval cpa{cnt = tail c, val = tail $ tail v, sto = Map.insert (lookup' (idval $ head $ tail v) e) (head v) s }
+                                 Kw KWLoop              -> eval cpa{cnt = if(bval $ head v) 
+                                                                          then (Comm $ Loop (beval $ head $ tail v) (cmdval $ head $ tail v)) : tail c 
+                                                                          else tail c
+                                                                   , val = tail $ tail v}
                                  Kw KWSum               -> eval cpa{cnt = tail c, val = In (ival (head v) + ival (head (tail v))) : tail (tail v)}
                                  Kw KWSub               -> eval cpa{cnt = tail c, val = In (ival (head v) - ival (head (tail v))) : tail (tail v)}
                                  Kw KWMul               -> eval cpa{cnt = tail c, val = In (ival (head v) * ival (head (tail v))) : tail (tail v)}
