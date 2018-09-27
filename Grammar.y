@@ -3,6 +3,8 @@ module Grammar where
 import Tokens
 import Data.Typeable
 import Data.Maybe
+import Data.Dynamic
+import qualified Data.Map.Strict as Map
 }
 
 %name parseCalc
@@ -26,6 +28,13 @@ import Data.Maybe
 	'<=' {TokenMenorIgual}
 	'&&' {TokenAnd}
 	'||' {TokenOr}
+	':=' {TokenAssign}
+	var  {TokenVarId $$}
+	while {TokenWhile}
+	do    {TokenDo}
+	'{'     {TokenLBrace}
+	'}'     {TokenRBrace}
+	';'     {TokenSemiComma}
 
 %right in
 %nonassoc '>' '<'
@@ -36,6 +45,7 @@ import Data.Maybe
 %%
 Expr:  Aexpr                     { Aexp $1 }
       |Bexpr                     { Bexp $1 }
+	  |Cmd                       { Comm $1  }
     	  
 Aexpr : Aexpr '+' Aexpr          { Sum $1 $3 }
     | Aexpr '-' Aexpr            { Sub $1 $3 }
@@ -54,6 +64,13 @@ Bexpr : Aexpr '<' Aexpr            { Lt $1 $3 }
     | true                       { Boo True }
 	| false                      { Boo False }
 
+Cmd :    Identifier ':=' Expr                       {Assign $1 $3} 
+        | while '(' Bexpr ')' do '{' Cmd '}'    {Loop $3 $7}
+        | Cmd ';' Cmd                               {CSeq $1 $3}
+
+Identifier:  var                  {Id $1}
+
+		
 {
 
 
@@ -112,4 +129,10 @@ data Value = Bo { bval :: Bool }
         | Idt { idval :: Identifier } 
         | Lp {beval :: Bexpr, cmdval :: Cmd} 
         | Comd {cval :: Cmd } deriving Show
+		
+data Location = L Integer 
+        | Sto Storable deriving Show 
+
+data Storable = N Int 
+        | B Bool deriving (Show, Eq, Ord)
 }
