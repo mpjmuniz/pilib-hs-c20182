@@ -11,13 +11,12 @@ import qualified Data.Map.Strict as Map
  - Automata definition
  -}
  
-data Location = L Integer 
+data Location = L Int 
         | Sto Storable deriving (Show, Eq, Ord) 
 
 data Storable = N Int 
         | B Bool deriving (Show, Eq, Ord)
 
-		
 type ValueStack = [Value]
 type ControlStack = [Expr]
 type Loc = Integer
@@ -36,7 +35,7 @@ lookup' k m = fromJust $ Map.lookup k m
 eval :: CmdPiAut -> CmdPiAut
 eval cpa@(CmdPiAut {cnt = []}) = cpa
 eval cpa@(CmdPiAut e s v c)    = eval $ case (head c) of
-                                         Comm (Assign idtf exp) -> cpa{cnt = exp : Kw KWAssign : tail c, val = Idt idtf : v} -- TODO: check for "S' = S/[I->T]"
+                                         Comm (Assign idtf exp) -> cpa{cnt = exp : Kw KWAssign : tail c, val = Idt idtf : v, env = Map.insert idtf (L $ Map.size e + 1) e} -- TODO: check for "S' = S/[I->T]"
                                          Comm (CSeq cmd1 cmd2)  -> cpa{cnt = Comm cmd1 : Comm cmd2 : tail c}
                                          Comm (Loop bexp cmd)   -> cpa{cnt = Bexp bexp : Kw KWLoop : tail c, val = Comd cmd : Lp bexp cmd : v}
                                          Aexp (Sum aex1 aex2)   -> cpa{cnt = Aexp aex1 : Aexp aex2 : Kw KWSum : tail c} 
@@ -56,7 +55,7 @@ eval cpa@(CmdPiAut e s v c)    = eval $ case (head c) of
                                          Kw KWNot               -> cpa{cnt = tail c, val = Bo (not (bval (head v))) : tail v}
                                          x -> let (va:vb:vs) = v in
                                                             case x of 
-                                                            Kw KWAssign -> cpa{cnt = tail c, val = vs, sto = Map.insert (lookup' (idval vb) e) va s }
+                                                            Kw KWAssign -> cpa{cnt = tail c, val = vs, sto = Map.insert (lookup' (idval vb) e) va s } -- This lookup can't find anything because it has not been there yet!
                                                             Kw KWLoop -> cpa{cnt = if(bval $ va) then (Comm $ Loop (beval vb) (cmdval vb)) : tail c 
                                                                                                  else tail c
                                                                             , val = vs}
@@ -72,10 +71,43 @@ eval cpa@(CmdPiAut e s v c)    = eval $ case (head c) of
                                                             Kw KWAnd -> cpa{cnt = tail c, val = Bo (bval va && bval vb) : vs}
 main :: IO ()
 main = do	
-    s <- readFile "C:\\Users\\rodri\\OneDrive\\Documentos\\compiladores\\program.txt"
-    print s
-    let ast = parseCalc (scanTokens s)
+    --s <- readFile "C:\\Users\\rodri\\OneDrive\\Documentos\\compiladores\\program.txt"
+    --print s
+    --let ast = parseCalc (scanTokens s)
+    --let ast = Comm (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1)))
+    --let ast = Comm (CSeq (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1))) (Assign (Id "Meu ID Denovo!") (Aexp $ Sum (Num 1) (Num 1))))
+    let ast = Comm (Loop (Eq (Boo False) (Boo False)) (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1))))
     let aut = CmdPiAut (Map.fromList []) (Map.fromList []) [] [ast]
     let result =  eval aut
     print ast
     print result
+
+{- Example expressions
+Num 2
+Sum (Num 1) (Num 1)
+Sub (Num 1) (Num 1)
+Mul (Num 1) (Num 1)
+Boo True
+Eq (Boo True) (Boo False)
+Not (Boo True)
+Gt (Num 2) (Num 1)
+Ge (Num 2) (Num 2)
+Lt (Num 1) (Num 2)
+Le (Num 2) (Num 2)
+And (Boo True) (Boo True)
+Or (Boo True) (Boo False)
+-- até aqui, tudo OK
+Id "Meu ID"
+Idtf (Id "Meu ID")
+Assign (Id "Meu ID") (Sum (Num 1) (Num 1))
+Comm (Assign (Id "Meu ID") (Sum (Num 1) (Num 1)))
+Aexp (Sum (Num 1) (Num 1))
+Bexp (Eq (Boo True) (Boo False))
+Exp (Aexp (Sum (Num 1) (Num 1)))
+Command (Assign (Id "Meu ID") (Sum (Num 1) (Num 1)))
+Loop (Eq (Boo True) (Boo False)) (Assign (Id "Meu ID") (Sum (Num 1) (Num 1)))
+CSeq (Assign (Id "Meu ID") (Sum (Num 1) (Num 1))) (Assign (Id "Meu ID denovo") (Sum (Num 1) (Num 1))
+
+let exp = Sum (Num 5) (Num 2)
+
+-}

@@ -1,30 +1,22 @@
-{-# LANGUAGE RecordWildCards #-}
-
-import Data.Typeable
+module Main where
+import Parser
+import Lexer
+import Data.Dynamic
 import Data.Maybe
+import System.IO
 import qualified Data.Map.Strict as Map
-{- |
- - Pi-lib expressions. 
--}
-data Identifier = Id String deriving (Show, Eq, Ord)
-data Expr = Aexp Aexpr | Bexp Bexpr | Idtf Identifier | Kw Keyword | Comm Cmd deriving (Show, Eq)
-data Aexpr = Num Int | Sum Aexpr Aexpr | Sub Aexpr Aexpr | Mul Aexpr Aexpr deriving (Show, Eq)
-data Bexpr = Boo Bool | Eq Bexpr Bexpr | Not Bexpr | Gt Aexpr Aexpr | Ge Aexpr Aexpr 
-           | Lt Aexpr Aexpr | Le Aexpr Aexpr | And Bexpr Bexpr | Or Bexpr Bexpr deriving (Show, Eq)
-data Statement = Exp Expr | Command Cmd deriving Show
-data Cmd = Assign Identifier Expr | Loop Bexpr Cmd | CSeq Cmd Cmd deriving (Show, Eq)
-data Keyword = KWSum | KWMul | KWSub 
-             | KWEq | KWNot | KWOr | KWAnd | KWLt | KWLe | KWGt | KWGe 
-             | KWAssign | KWLoop deriving (Show, Eq)
-data Value = Bo { bval :: Bool } | In { ival :: Int } | Idt { idval :: Identifier } 
-           | Lp {beval :: Bexpr, cmdval :: Cmd} | Comd {cval :: Cmd } deriving (Show, Eq)
 
-data Location = L Integer | Sto Storable deriving (Show, Eq, Ord) 
-data Storable = N Int | B Bool deriving (Show, Eq, Ord)
 
 {- |
  - Automata definition
  -}
+ 
+data Location = L Int 
+        | Sto Storable deriving (Show, Eq, Ord) 
+
+data Storable = N Int 
+        | B Bool deriving (Show, Eq, Ord)
+
 type ValueStack = [Value]
 type ControlStack = [Expr]
 type Loc = Integer
@@ -43,19 +35,19 @@ lookup' k m = fromJust $ Map.lookup k m
 eval :: CmdPiAut -> CmdPiAut
 eval cpa@(CmdPiAut {cnt = []}) = cpa
 eval cpa@(CmdPiAut e s v c)    = eval $ case (head c) of
-                                         Comm (Assign idtf exp) -> cpa{cnt = exp : Kw KWAssign : tail c, val = Idt idtf : v} -- TODO: check for "S' = S/[I->T]"
+                                         Comm (Assign idtf exp) -> cpa{cnt = exp : Kw KWAssign : tail c, val = Idt idtf : v, env = Map.insert idtf (L $ Map.size e + 1) e} -- TODO: check for "S' = S/[I->T]"
                                          Comm (CSeq cmd1 cmd2)  -> cpa{cnt = Comm cmd1 : Comm cmd2 : tail c}
                                          Comm (Loop bexp cmd)   -> cpa{cnt = Bexp bexp : Kw KWLoop : tail c, val = Comd cmd : Lp bexp cmd : v}
                                          Aexp (Sum aex1 aex2)   -> cpa{cnt = Aexp aex1 : Aexp aex2 : Kw KWSum : tail c} 
-                                         Aexp (Sub aex1 aex2)   -> cpa{cnt = Aexp aex1 : Aexp aex2 : Kw KWSub : tail c}
+                                         Aexp (Sub aex1 aex2)   -> cpa{cnt = Aexp aex2: Aexp aex1: Kw KWSub : tail c}
                                          Aexp (Mul aex1 aex2)   -> cpa{cnt = Aexp aex1 : Aexp aex2 : Kw KWMul : tail c}
                                          Bexp (Eq  exp1 exp2)   -> cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWEq  : tail c} 
                                          Bexp (Or  exp1 exp2)   -> cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWOr  : tail c} 
                                          Bexp (And exp1 exp2)   -> cpa{cnt = Bexp exp1 : Bexp exp2 : Kw KWAnd : tail c} 
-                                         Bexp (Lt  exp1 exp2)   -> cpa{cnt = Aexp exp1 : Aexp exp2 : Kw KWLt  : tail c} 
-                                         Bexp (Le  exp1 exp2)   -> cpa{cnt = Aexp exp1 : Aexp exp2 : Kw KWLe  : tail c} 
-                                         Bexp (Ge  exp1 exp2)   -> cpa{cnt = Aexp exp1 : Aexp exp2 : Kw KWGe  : tail c} 
-                                         Bexp (Gt  exp1 exp2)   -> cpa{cnt = Aexp exp1 : Aexp exp2 : Kw KWGt  : tail c} 
+                                         Bexp (Lt  exp1 exp2)   -> cpa{cnt = Aexp exp2: Aexp exp1: Kw KWLt  : tail c} 
+                                         Bexp (Le  exp1 exp2)   -> cpa{cnt = Aexp exp2: Aexp exp1: Kw KWLe  : tail c} 
+                                         Bexp (Ge  exp1 exp2)   -> cpa{cnt = Aexp exp2: Aexp exp1: Kw KWGe  : tail c} 
+                                         Bexp (Gt  exp1 exp2)   -> cpa{cnt = Aexp exp2: Aexp exp1: Kw KWGt  : tail c} 
                                          Bexp (Not ex)          -> cpa{cnt = Bexp ex : Kw KWNot : tail c}
                                          Aexp (Num ival)        -> cpa{cnt = tail c, val = In ival : v}
                                          Bexp (Boo bval)        -> cpa{cnt = tail c, val = Bo bval : v}
@@ -63,7 +55,7 @@ eval cpa@(CmdPiAut e s v c)    = eval $ case (head c) of
                                          Kw KWNot               -> cpa{cnt = tail c, val = Bo (not (bval (head v))) : tail v}
                                          x -> let (va:vb:vs) = v in
                                                             case x of 
-                                                            Kw KWAssign -> cpa{cnt = tail c, val = vs, sto = Map.insert (lookup' (idval vb) e) va s }
+                                                            Kw KWAssign -> cpa{cnt = tail c, val = vs, sto = Map.insert (lookup' (idval vb) e) va s } -- This lookup can't find anything because it has not been there yet!
                                                             Kw KWLoop -> cpa{cnt = if(bval $ va) then (Comm $ Loop (beval vb) (cmdval vb)) : tail c 
                                                                                                  else tail c
                                                                             , val = vs}
@@ -77,6 +69,18 @@ eval cpa@(CmdPiAut e s v c)    = eval $ case (head c) of
                                                             Kw KWGt  -> cpa{cnt = tail c, val = Bo (ival va < ival vb) : vs}
                                                             Kw KWOr  -> cpa{cnt = tail c, val = Bo (bval va || bval vb) : vs}
                                                             Kw KWAnd -> cpa{cnt = tail c, val = Bo (bval va && bval vb) : vs}
+main :: IO ()
+main = do	
+    --s <- readFile "C:\\Users\\rodri\\OneDrive\\Documentos\\compiladores\\program.txt"
+    --print s
+    --let ast = parseCalc (scanTokens s)
+    --let ast = Comm (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1)))
+    --let ast = Comm (CSeq (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1))) (Assign (Id "Meu ID Denovo!") (Aexp $ Sum (Num 1) (Num 1))))
+    let ast = Comm (Loop (Eq (Boo True) (Boo False)) (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1))))
+    let aut = CmdPiAut (Map.fromList []) (Map.fromList []) [] [ast]
+    let result =  eval aut
+    print ast
+    print result
 
 {- Example expressions
 Num 2

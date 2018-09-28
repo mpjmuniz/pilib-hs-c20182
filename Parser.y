@@ -85,12 +85,12 @@ data Expr = Aexp Aexpr
         | Bexp Bexpr 
         | Idtf Identifier 
         | Kw Keyword
-        | Comm Cmd deriving Show
+        | Comm Cmd deriving (Show, Eq)
 		 
 data Aexpr = Num Int 
         | Sum Aexpr Aexpr 
         | Sub Aexpr Aexpr 
-        | Mul Aexpr Aexpr deriving Show
+        | Mul Aexpr Aexpr deriving (Show, Eq)
 
 data Bexpr = Boo Bool 
         | Eq Bexpr Bexpr 
@@ -100,7 +100,7 @@ data Bexpr = Boo Bool
 		| Lt Aexpr Aexpr 
 		| Le Aexpr Aexpr
 		| And Bexpr Bexpr 
-		| Or Bexpr Bexpr deriving Show
+		| Or Bexpr Bexpr deriving (Show, Eq)
 
 
 data Statement = Exp Expr 
@@ -108,7 +108,7 @@ data Statement = Exp Expr
 
 data Cmd = Assign Identifier Expr 
         | Loop Bexpr Cmd 
-        | CSeq Cmd Cmd deriving Show
+        | CSeq Cmd Cmd deriving (Show, Eq)
 
 data Keyword = KWSum 
         | KWMul 
@@ -122,7 +122,7 @@ data Keyword = KWSum
         | KWGt 
         | KWGe
         | KWAssign 
-        | KWLoop deriving Show
+        | KWLoop deriving (Show, Eq)
 
 data Identifier = Id String deriving (Show, Eq, Ord)
 
@@ -130,7 +130,6 @@ data Value = Bo { bval :: Bool }
         | In { ival :: Int } 
         | Idt { idval :: Identifier } 
         | Lp {beval :: Bexpr, cmdval :: Cmd} 
-        | Comd {cval :: Cmd } deriving Show
-		
+        | Comd {cval :: Cmd } deriving (Show, Eq)
 
 }
