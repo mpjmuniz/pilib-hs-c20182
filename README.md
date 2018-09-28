@@ -8,4 +8,8 @@ alex Lexer.x
 
 happy Parser.y
 
-ghc --make Calc.hs   (verificar no código o caminho para o arquivo que será lido)
+--verificar no código Calc.hs, antes de compilar, o caminho para o arquivo que será lido como entrada do programa
+
+ghc --make Calc.hs   
+
+
