@@ -11,8 +11,8 @@ $whitechar = [\s\n\r]
 
 tokens :-
   $white+			;
-  $digit+			{ \s -> TokenInt(read s)}	
-  ":="                           { \s -> TokenAssign}
+  $digit+                       { \s -> TokenInt(read s)}	
+  ":="                          { \s -> TokenAssign}
   \==                           { \s -> TokenEq }
   \+                            { \s -> TokenPlus }
   \-                            { \s -> TokenMinus }
@@ -25,17 +25,16 @@ tokens :-
   \<                            { \s -> TokenMenor }
   \>=                           { \s -> TokenMaiorIgual }
   \<=                           { \s -> TokenMenorIgual }
-  \&&							{ \s  -> TokenAnd}
-  "||"							{ \s  -> TokenOr}
-  while                       { \s  -> TokenWhile}
-  do                          { \s  -> TokenDo}
-  \{                           { \s  -> TokenLBrace}
-  \}                           { \s  -> TokenRBrace}
-  \;                           { \s   -> TokenSemiComma}
-  False			                { \s -> TokenFalse}
-  True					        { \s -> TokenTrue}
-  $alpha[$alpha $digit \_]*		{ \s -> TokenVarId s}
-
+  \&&                           { \s  -> TokenAnd}
+  "||"	                        { \s  -> TokenOr}
+  while                         { \s  -> TokenWhile}
+  do                            { \s  -> TokenDo}
+  \{                            { \s  -> TokenLBrace}
+  \}                            { \s  -> TokenRBrace}
+  \;                            { \s   -> TokenSemiComma}
+  False	                        { \s -> TokenFalse}
+  True	                        { \s -> TokenTrue}
+  $alpha[$alpha $digit \_]*	{ \s -> TokenVarId s}
 
 {
 -- Each action has type :: String -> Token
@@ -56,15 +55,15 @@ data Token = TokenVarId String
            | TokenMenor
            | TokenMaiorIgual
            | TokenMenorIgual
-		   | TokenAnd
-		   | TokenOr
-		   | TokenWhile
-		   | TokenDo
-		   | TokenLBrace
-		   | TokenRBrace
-		   | TokenSemiComma
-		   | TokenTrue
-           | TokenFalse	deriving (Eq,Show)
+           | TokenAnd
+           | TokenOr
+           | TokenWhile
+           | TokenDo
+           | TokenLBrace
+           | TokenRBrace
+           | TokenSemiComma
+           | TokenTrue
+           | TokenFalse deriving (Eq,Show)
 
 scanTokens = alexScanTokens
 

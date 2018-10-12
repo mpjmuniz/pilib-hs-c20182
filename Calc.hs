@@ -1,6 +1,6 @@
---module Main where
---import Parser
---import Lexer
+module Main where
+import Parser
+import Lexer
 import Data.Dynamic
 import Data.Maybe
 import System.IO
@@ -10,11 +10,11 @@ import qualified Data.Map.Strict as Map
 {-
  - Nota de modificação: os construtores foram refatorados para uma melhor legibilidade. Agora constutores tem de 1 a 3 letras, e os tipos são escritos por extenso. 
  - Deste modo, o código com coerções (como no autômato) fica bem enxuto, e fica bem claro o que é tipo e o que é construtor na definição dos data's (os tipos)
- - -}
+data Control = S Statement | K Keyword deriving Show
+
 data Statement = E Expression
                | C Command
-               | D Declaration
-               | K Control deriving Show
+               | D Declaration deriving Show
 
 data Expression = Ae ArithmeticExpression 
                 | Be BooleanExpression 
@@ -46,49 +46,27 @@ data Command = A  Identifier Expression
 data Declaration = Bi Identifier Expression
                  | Ds Declaration Declaration deriving (Show, Eq)
 
-data Control = Kw  Keyword
-             | Cmd Command deriving (Show, Eq)
-
 data Identifier = I String deriving (Show, Eq, Ord)
 
-data Keyword = KWSum 
-             | KWMul 
-             | KWSub 
-             | KWNot
-             | KWAnd
-             | KWEq 
-             | KWOr 
-             | KWLt 
-             | KWLe
-             | KWGt 
-             | KWGe
-             | KWAssign 
-             | KWLoop
-             | KWRef
-             | KWCns
-             | KWBlkd
-             | KWBlc
-             | KWBind
-             | KWDSeq deriving (Show, Eq)
-
+data Keyword = KWSum | KWMul | KWSub | KWNot | KWAnd | KWEq | KWOr | KWLt | KWLe | KWGt | KWGe
+             | KWAssign | KWLoop | KWRef
+             | KWCns | KWBlkd | KWBlc | KWBind | KWDSeq deriving (Show, Eq)
+ 
 data Value = Vb  { bval :: Bool } 
            | Vi  { ival :: Int } 
            | Vlp { beval :: BooleanExpression, cmdval :: Command} 
            | Vid { idval :: Identifier } 
            | Vcm { cval :: Command } 
            | Vl  { lval :: Location } deriving (Show, Eq)
+ - -}
 {- |
  - Automata definition
  -}
  
-data Location = Loc Int 
-              | Sto Storable deriving (Show, Eq, Ord) 
-
-type Storable = Either Bool Int 
-
+--data Location = Loc Int | Sto Storable deriving (Show, Eq, Ord) 
+--type Storable = Either Bool Int 
 type ValueStack = [Value]
-type ControlStack = [Statement]
-type Loc = Integer
+type ControlStack = [Control]
 
 data CmdPiAut = CmdPiAut { env :: Map.Map Identifier Location, -- TODO: verificar tipagem, possível confusão entre Location, Identifier, Storable
                            sto :: Map.Map Location Storable, 
@@ -112,86 +90,77 @@ storeValue (Vb x) = Left x
 eval :: CmdPiAut -> CmdPiAut
 eval cpa@(CmdPiAut {cnt = []}) = cpa
 eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
-                                      E (Ae (Sum aex1 aex2))   -> cpa{cnt = E (Ae aex1) : E (Ae aex2) : K (Kw KWSum) : tail c} 
-                                      E (Ae (Sub aex1 aex2))   -> cpa{cnt = E (Ae aex2) : E (Ae aex1) : K (Kw KWSub) : tail c}
-                                      E (Ae (Mul aex1 aex2))   -> cpa{cnt = E (Ae aex1) : E (Ae aex2) : K (Kw KWMul) : tail c}
-                                      E (Be (Eq  exp1 exp2))   -> cpa{cnt = E (Be exp1) : E (Be exp2) : K (Kw KWEq)  : tail c} 
-                                      E (Be (Or  exp1 exp2))   -> cpa{cnt = E (Be exp1) : E (Be exp2) : K (Kw KWOr)  : tail c} 
-                                      E (Be (And exp1 exp2))   -> cpa{cnt = E (Be exp1) : E (Be exp2) : K (Kw KWAnd) : tail c} 
-                                      E (Be (Lt  exp1 exp2))   -> cpa{cnt = E (Ae exp2) : E (Ae exp1) : K (Kw KWLt)  : tail c} 
-                                      E (Be (Le  exp1 exp2))   -> cpa{cnt = E (Ae exp2) : E (Ae exp1) : K (Kw KWLe)  : tail c} 
-                                      E (Be (Ge  exp1 exp2))   -> cpa{cnt = E (Ae exp2) : E (Ae exp1) : K (Kw KWGe)  : tail c} 
-                                      E (Be (Gt  exp1 exp2))   -> cpa{cnt = E (Ae exp2) : E (Ae exp1) : K (Kw KWGt)  : tail c} 
-                                      E (Be (Not ex))          -> cpa{cnt = E (Be ex) : K (Kw KWNot) : tail c}
-                                      E (Ae (N intval))        -> cpa{cnt = tail c, val = Vi intval : v}
-                                      E (Be (B booval))        -> cpa{cnt = tail c, val = Vb booval : v}
-                                      K (Kw KWNot)             -> cpa{cnt = tail c, val = Vb (not $ bval $ head v) : tail v}
-                                      E (Id (I str))           -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' (I str) e) s) : v} 
-                                      C (A idtf exp)           -> cpa{cnt = E exp : K (Kw KWAssign) : tail c, 
-                                                                      val = Vid idtf : v} --sto = Map.insert (Loc $ Map.size s + 1) idtf s} segundo implementação em python, semântica formal está confusa
-                                      C (Cs cmd1 cmd2)         -> cpa{cnt = C cmd1 : C cmd2 : tail c}
-                                      C (L bexp cmd)           -> cpa{cnt = E (Be bexp) : K (Kw KWLoop) : tail c, val = Vlp bexp cmd : v} -- faltando push da bexp antes do Vlp
-                                      E (Rf exp)               -> cpa{cnt = E exp : K (Kw KWRef) : tail c}
-                                      E (Dr idt)               -> cpa{cnt = tail c, val = Vl (lookup' idt e) : v}
-                                      E (Vr idt)               -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' idt e) s) : v}
-                                      D (Ds dec1 dec2 )        -> cpa{cnt = D dec1 : D dec2 : tail c}
+                                      S (E (Ae (Sum aex1 aex2)))   -> cpa{cnt = S (E (Ae aex1)) : S (E (Ae aex2)) : K KWSum : tail c} 
+                                      S (E (Ae (Sub aex1 aex2)))   -> cpa{cnt = S (E (Ae aex2)) : S (E (Ae aex1)) : K KWSub : tail c}
+                                      S (E (Ae (Mul aex1 aex2)))   -> cpa{cnt = S (E (Ae aex1)) : S (E (Ae aex2)) : K KWMul : tail c}
+                                      S (E (Be (Eq  exp1 exp2)))   -> cpa{cnt = S (E (Be exp1)) : S (E (Be exp2)) : K KWEq  : tail c} 
+                                      S (E (Be (Or  exp1 exp2)))   -> cpa{cnt = S (E (Be exp1)) : S (E (Be exp2)) : K KWOr  : tail c} 
+                                      S (E (Be (And exp1 exp2)))   -> cpa{cnt = S (E (Be exp1)) : S (E (Be exp2)) : K KWAnd : tail c} 
+                                      S (E (Be (Lt  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp2)) : S (E (Ae exp1)) : K KWLt  : tail c} 
+                                      S (E (Be (Le  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp2)) : S (E (Ae exp1)) : K KWLe  : tail c} 
+                                      S (E (Be (Ge  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp2)) : S (E (Ae exp1)) : K KWGe  : tail c} 
+                                      S (E (Be (Gt  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp2)) : S (E (Ae exp1)) : K KWGt  : tail c} 
+                                      S (E (Be (Not ex)))          -> cpa{cnt = S (E (Be ex))   : K KWNot : tail c}
+                                      S (E (Ae (N intval)))        -> cpa{cnt = tail c, val = Vi intval : v}
+                                      S (E (Be (B booval)))        -> cpa{cnt = tail c, val = Vb booval : v}
+                                      S (C (A idtf exp))           -> cpa{cnt = S (E exp) : K KWAssign : tail c, val = Vid idtf : v} 
+--sto = Map.insert (Loc $ Map.size s + 1) idtf s} segundo implementação em python, semântica formal está confusa
+                                      S (C (Cs cmd1 cmd2))         -> cpa{cnt = S (C cmd1) : S (C cmd2) : tail c}
+                                      S (C (L bexp cmd))           -> cpa{cnt = S (E (Be bexp)) : K KWLoop : tail c, val = Vlp bexp cmd : v} -- faltando push da bexp antes do Vlp
+                                      S (E (Rf exp))               -> cpa{cnt = S (E exp) : K KWRef : tail c}
+                                      S (E (Dr idt))               -> cpa{cnt = tail c, val = Vl (lookup' idt e) : v}
+                                      S (E (Vr idt))               -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' idt e) s) : v}
+                                      S (D (Ds dec1 dec2))         -> cpa{cnt = S (D dec1) : S (D dec2) : tail c}
+                                      K KWNot                      -> cpa{cnt = tail c, val = Vb (not $ bval $ head v) : tail v}
+                                      S (E (Id id))                -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' id e) s) : v} 
                                       x -> let (va:vb:vs) = v in case x of
-                                           K (Kw KWSum)   -> cpa{cnt = tail c, val = Vi (ival va + ival vb)  : vs}
-                                           K (Kw KWSub)   -> cpa{cnt = tail c, val = Vi (ival va - ival vb)  : vs}
-                                           K (Kw KWMul)   -> cpa{cnt = tail c, val = Vi (ival va * ival vb)  : vs}
-                                           K (Kw KWEq)    -> cpa{cnt = tail c, val = Vb (bval va == bval vb) : vs}
-                                           K (Kw KWLe)    -> cpa{cnt = tail c, val = Vb (ival va >= ival vb) : vs}
-                                           K (Kw KWLt)    -> cpa{cnt = tail c, val = Vb (ival va > ival vb)  : vs}
-                                           K (Kw KWGe)    -> cpa{cnt = tail c, val = Vb (ival va <= ival vb) : vs}
-                                           K (Kw KWGt)    -> cpa{cnt = tail c, val = Vb (ival va < ival vb)  : vs}
-                                           K (Kw KWOr)    -> cpa{cnt = tail c, val = Vb (bval va || bval vb) : vs}
-                                           K (Kw KWAnd)   -> cpa{cnt = tail c, val = Vb (bval va && bval vb) : vs}
-                                           K (Kw KWAssign)-> cpa{cnt = tail c, val = vs, -- esperar erros como se va for loop, identifier ou command
-                                                                 sto = Map.insert (lookup' (idval vb) e) (storeValue va) s } 
-                                           K (Kw KWLoop)  -> cpa{cnt = if(bval $ va) then (C $ L (beval vb) (cmdval vb)) : tail c 
-                                                                                     else tail c ,val = vs}
-                                           K (Kw KWRef)   -> let loc = (Map.size s) + 1 in 
+                                           K KWSum               -> cpa{cnt = tail c, val = Vi (ival va + ival vb)  : vs}
+                                           K KWSub               -> cpa{cnt = tail c, val = Vi (ival va - ival vb)  : vs}
+                                           K KWMul               -> cpa{cnt = tail c, val = Vi (ival va * ival vb)  : vs}
+                                           K KWEq                -> cpa{cnt = tail c, val = Vb (bval va == bval vb) : vs}
+                                           K KWLe                -> cpa{cnt = tail c, val = Vb (ival va >= ival vb) : vs}
+                                           K KWLt                -> cpa{cnt = tail c, val = Vb (ival va > ival vb)  : vs}
+                                           K KWGe                -> cpa{cnt = tail c, val = Vb (ival va <= ival vb) : vs}
+                                           K KWGt                -> cpa{cnt = tail c, val = Vb (ival va < ival vb)  : vs}
+                                           K KWOr                -> cpa{cnt = tail c, val = Vb (bval va || bval vb) : vs}
+                                           K KWAnd               -> cpa{cnt = tail c, val = Vb (bval va && bval vb) : vs}
+                                           K KWAssign            -> cpa{cnt = tail c, val = vs, sto = Map.insert (lookup' (idval vb) e) (storeValue va) s } 
+-- esperar erros como se va for loop, identifier ou command
+                                           K KWLoop  -> cpa{cnt = if(bval $ va) then S (C $ L (beval vb) (cmdval vb)) : tail c 
+                                                                                else tail c ,val = vs}
+                                           K KWRef   -> let loc = (Map.size s) + 1 in 
                                                              cpa{cnt = tail c, sto = Map.insert (Loc loc) (storeValue va) s, val = Vl (Loc loc) : vs, locs = loc : l}
-{-
 main :: IO ()
 main = do
-    --s <- readFile "C:\\Users\\rodri\\OneDrive\\Documentos\\compiladores\\program.txt"
-    --print s
-    --let ast = parseCalc (scanTokens s)
-    let ast = Aexp $ Sum (Num 1) (Num 1)
+    s <- readFile "C:\\Users\\rodri\\OneDrive\\Documentos\\compiladores\\program.txt"
+    print s
+    let ast = parseCalc (scanTokens s)
+    let ast = Ae $ Sum (N 1) (N 1)
     --let ast = Comm (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1)))
     --let ast = Comm (CSeq (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1))) (Assign (Id "Meu ID Denovo!") (Aexp $ Sum (Num 1) (Num 1))))
     --let ast = Comm (Loop (Eq (Boo False) (Boo False)) (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1))))
     --let ast = Comm (CSeq (Assign (Id "Meu ID") (Aexp $ Num 1)) (Loop (Lt (Id "Meu ID") (Num 5)) (Assign (Id "Meu ID") (Aexp $ Sum (Id "Meu ID") (Num 1)))))
-    let aut = CmdPiAut (Map.fromList []) (Map.fromList []) [] [ast]
-    let result =  eval aut
+    let aut = CmdPiAut (Map.fromList []) (Map.fromList []) [] [S $ E $ ast] []
+    let result = eval aut
     print ast
     print result
--}
 {- Example expressions
-Num 2
-Sum (Num 1) (Num 1)
-Sub (Num 1) (Num 1)
-Mul (Num 1) (Num 1)
-Boo True
-Eq (Boo True) (Boo False)
-Not (Boo True)
-Gt (Num 2) (Num 1)
-Ge (Num 2) (Num 2)
-Lt (Num 1) (Num 2)
-Le (Num 2) (Num 2)
-And (Boo True) (Boo True)
-Or (Boo True) (Boo False)
--- atÃ© aqui, tudo OK
-Id "Meu ID"
-Idtf (Id "Meu ID")
-Assign (Id "Meu ID") (Sum (Num 1) (Num 1))
-Comm (Assign (Id "Meu ID") (Sum (Num 1) (Num 1)))
-Aexp (Sum (Num 1) (Num 1))
-Bexp (Eq (Boo True) (Boo False))
-Exp (Aexp (Sum (Num 1) (Num 1)))
-Command (Assign (Id "Meu ID") (Sum (Num 1) (Num 1)))
-Loop (Eq (Boo True) (Boo False)) (Assign (Id "Meu ID") (Sum (Num 1) (Num 1)))
-CSeq (Assign (Id "Meu ID") (Sum (Num 1) (Num 1))) (Assign (Id "Meu ID denovo") (Sum (Num 1) (Num 1))
-let exp = Sum (Num 5) (Num 2)
+S $ E $ Ae $ N 2                        2
+S $ E $ Ae $ Sum (N 1) (N 1)            1 + 1
+S $ E $ Ae $ Sub (N 1) (N 1)            1 - 1
+S $ E $ Ae $ Mul (N 1) (N 1)            1 * 1
+S $ E $ Be $ B True                     True
+S $ E $ Be $ Eq (B True) (B False)      True == False
+S $ E $ Be $ Not (B True)               not True
+S $ E $ Be $ Gt (N 2) (N 1)             2 > 1
+S $ E $ Be $ Ge (N 2) (N 2)             2 >= 2
+S $ E $ Be $ Lt (N 1) (N 2)             1 < 2
+S $ E $ Be $ Le (N 2) (N 2)             2 <= 2
+S $ E $ Be $ And (B True) (B True)      True && True
+S $ E $ Be $ Or (B True) (B False)      True || False
+-- ate aqui, tudo OK
+S $ E $ Id $ I "Meu ID"
+S $ C $ A (I "Meu ID") (Sum (N 1) (N 1))
+S $ C $ L (B True) (C (A (I "Meu ID") (Sum (N 1) (N 1))))
+S $ C $ Cs (A (I "Meu ID") (Sum (N 1) (N 1)))) (A (I "Meu ID") (Sum (N 1) (N 1))))
 -}
