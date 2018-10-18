@@ -57,7 +57,8 @@ data Value = Vb  { bval :: Bool }
            | Vlp { beval :: BooleanExpression, cmdval :: Command} 
            | Vid { idval :: Identifier } 
            | Vcm { cval :: Command } 
-           | Vl  { lval :: Location } deriving (Show, Eq)
+           | Vl  { lval :: Location }
+           | Bng { itval :: Identifier, xval :: Expression} deriving (Show, Eq) -- só um chute, não entendi bem a especificação formal aqui
  - -}
 {- |
  - Automata definition
@@ -87,6 +88,9 @@ storeValue :: Value -> Storable
 storeValue (Vi x) = Right x
 storeValue (Vb x) = Left x
 
+{-
+ - Evaluation function. Given an automata, it recursively evaluates the expression in it's control stack
+ -}
 eval :: CmdPiAut -> CmdPiAut
 eval cpa@(CmdPiAut {cnt = []}) = cpa
 eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
@@ -113,6 +117,8 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                       S (D (Ds dec1 dec2))         -> cpa{cnt = S (D dec1) : S (D dec2) : tail c}
                                       K KWNot                      -> cpa{cnt = tail c, val = Vb (not $ bval $ head v) : tail v}
                                       S (E (Id id))                -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' id e) s) : v} 
+                                      S (D (Bi id exp))            -> cpa{cnt = S (E exp) : K KWBind : tail c, val = Vid id : v}
+                                      S (C (Bl decl cmd))          -> cpa{cnt = S (D decl) : K KWDec : S (C cmd) : tail c, val = Vls l : v, locs = []}
                                       x -> let (va:vb:vs) = v in case x of
                                            K KWSum               -> cpa{cnt = tail c, val = Vi (ival va + ival vb)  : vs}
                                            K KWSub               -> cpa{cnt = tail c, val = Vi (ival va - ival vb)  : vs}
@@ -130,6 +136,11 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                                                                 else tail c ,val = vs}
                                            K KWRef   -> let loc = (Map.size s) + 1 in 
                                                              cpa{cnt = tail c, sto = Map.insert (Loc loc) (storeValue va) s, val = Vl (Loc loc) : vs, locs = loc : l}
+                                           K KWBind  -> cpa{cnt = tail c, val = (Bng (xval vb) (itval va)) : vs} 
+                                           K KWDec   -> cpa{cnt = tail c, val = tail v, env = Map.insert (idtval (head v)) (lcval (head v)) e}
+                                           K KWBlk   -> cpa{cnt = tail c, val = tail vs, env = enval va, sto = Map.filterWithKey (\k _ -> not (k `elem` (lvals vb))) s, 
+                                                            locs = lvls (head vs)}
+-- outra possibilidade: Value incluir o tipo env, e empilhar o env no ValueStack
 main :: IO ()
 main = do
     s <- readFile "C:\\Users\\rodri\\OneDrive\\Documentos\\compiladores\\program.txt"

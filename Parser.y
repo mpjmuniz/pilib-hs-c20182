@@ -119,7 +119,7 @@ data Identifier = I String deriving (Show, Eq, Ord)
 
 data Keyword = KWSum | KWMul | KWSub | KWNot | KWAnd | KWEq | KWOr | KWLt | KWLe | KWGt | KWGe
              | KWAssign | KWLoop | KWRef
-             | KWCns | KWBlkd | KWBlc | KWBind | KWDSeq deriving (Show, Eq)
+             | KWCns | KWDec | KWBlk | KWBind | KWDSeq deriving (Show, Eq)
  
 data Location = Loc Int | Sto Storable deriving (Show, Eq, Ord) 
 type Storable = Either Bool Int 
@@ -129,6 +129,11 @@ data Value = Vb  { bval :: Bool }
            | Vlp { beval :: BooleanExpression, cmdval :: Command} 
            | Vid { idval :: Identifier } 
            | Vcm { cval :: Command } 
-           | Vl  { lval :: Location } deriving (Show, Eq)
+           | Vl  { lval :: Location } 
+           | Vls { lvls :: [Int] } 
+           | Lvls{ lvals :: [Location] } 
+           | Bng { xval :: Expression, itval :: Identifier} 
+           | Env { enval :: Map.Map Identifier Location} 
+           | En  { lcval :: Location, idtval :: Identifier} deriving (Show, Eq)
 
 }
