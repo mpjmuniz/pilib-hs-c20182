@@ -1,4 +1,4 @@
-module Main where
+module Calc where
 import Parser
 import Lexer
 import Data.Dynamic
@@ -143,9 +143,9 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
 -- outra possibilidade: Value incluir o tipo env, e empilhar o env no ValueStack
 main :: IO ()
 main = do
-    s <- readFile "C:\\Users\\rodri\\OneDrive\\Documentos\\compiladores\\program.txt"
-    print s
-    let ast = parseCalc (scanTokens s)
+    --s <- readFile "C:\\Users\\rodri\\OneDrive\\Documentos\\compiladores\\program.txt"
+    --print s
+    --let ast = parseCalc (scanTokens s)
     let ast = Ae $ Sum (N 1) (N 1)
     --let ast = Comm (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1)))
     --let ast = Comm (CSeq (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1))) (Assign (Id "Meu ID Denovo!") (Aexp $ Sum (Num 1) (Num 1))))
