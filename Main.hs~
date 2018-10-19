@@ -1,9 +1,0 @@
-module Main where
-import Grammar
-import Tokens
-import Data.Dynamic
-
-type Env = String -> Exp
-emptyEnv = error "Not found"
-envLookup s env = env s
-envBind s v env = (\s' -> if s == s' then v else env s)
