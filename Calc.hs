@@ -74,7 +74,7 @@ data CmdPiAut = CmdPiAut { env :: Map.Map Identifier Location, -- TODO: verifica
                            val :: ValueStack,
                            cnt :: ControlStack,
                            locs :: [Int]
-                         } deriving Show
+                         } deriving (Show, Eq)
 
 lookup' :: Ord k => k -> Map.Map k a -> a
 lookup' k m = fromJust $ Map.lookup k m
@@ -100,10 +100,10 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                       S (E (Be (Eq  exp1 exp2)))   -> cpa{cnt = S (E (Be exp1)) : S (E (Be exp2)) : K KWEq  : tail c} 
                                       S (E (Be (Or  exp1 exp2)))   -> cpa{cnt = S (E (Be exp1)) : S (E (Be exp2)) : K KWOr  : tail c} 
                                       S (E (Be (And exp1 exp2)))   -> cpa{cnt = S (E (Be exp1)) : S (E (Be exp2)) : K KWAnd : tail c} 
-                                      S (E (Be (Lt  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp2)) : S (E (Ae exp1)) : K KWLt  : tail c} 
+                                      S (E (Be (Lt  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp1)) : S (E (Ae exp2)) : K KWLt  : tail c} 
                                       S (E (Be (Le  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp2)) : S (E (Ae exp1)) : K KWLe  : tail c} 
                                       S (E (Be (Ge  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp2)) : S (E (Ae exp1)) : K KWGe  : tail c} 
-                                      S (E (Be (Gt  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp2)) : S (E (Ae exp1)) : K KWGt  : tail c} 
+                                      S (E (Be (Gt  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp1)) : S (E (Ae exp2)) : K KWGt  : tail c} 
                                       S (E (Be (Not ex)))          -> cpa{cnt = S (E (Be ex))   : K KWNot : tail c}
                                       S (E (Ae (N intval)))        -> cpa{cnt = tail c, val = Vi intval : v}
                                       S (E (Be (B booval)))        -> cpa{cnt = tail c, val = Vb booval : v}
@@ -156,17 +156,6 @@ main = do
     print ast
     print result
 {- Example expressions
-S $ E $ Ae $ N 2                        2
-S $ E $ Ae $ Sum (N 1) (N 1)            1 + 1
-S $ E $ Ae $ Sub (N 1) (N 1)            1 - 1
-S $ E $ Ae $ Mul (N 1) (N 1)            1 * 1
-S $ E $ Be $ B True                     True
-S $ E $ Be $ Eq (B True) (B False)      True == False
-S $ E $ Be $ Not (B True)               not True
-S $ E $ Be $ Gt (N 2) (N 1)             2 > 1
-S $ E $ Be $ Ge (N 2) (N 2)             2 >= 2
-S $ E $ Be $ Lt (N 1) (N 2)             1 < 2
-S $ E $ Be $ Le (N 2) (N 2)             2 <= 2
 S $ E $ Be $ And (B True) (B True)      True && True
 S $ E $ Be $ Or (B True) (B False)      True || False
 -- ate aqui, tudo OK

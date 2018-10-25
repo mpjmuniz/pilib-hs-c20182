@@ -79,11 +79,11 @@ Identifier:  var                   {I $1}
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
-data Control = S Statement | K Keyword deriving Show
+data Control = S Statement | K Keyword deriving (Show, Eq)
 
 data Statement = E Expression
                | C Command
-               | D Declaration deriving Show
+               | D Declaration deriving (Show, Eq)
 
 data Expression = Ae ArithmeticExpression 
                 | Be BooleanExpression 
