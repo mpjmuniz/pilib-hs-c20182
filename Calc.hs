@@ -91,6 +91,10 @@ storeValue (Vb x) = Left x
 {-
  - Evaluation function. Given an automata, it recursively evaluates the expression in it's control stack
  -}
+{-
+evalExp :: DeclPiAut -> DeclPiAut
+eval cpa@(DeclPiAut e s v c l)
+-}
 eval :: CmdPiAut -> CmdPiAut
 eval cpa@(CmdPiAut {cnt = []}) = cpa
 eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
@@ -156,11 +160,5 @@ main = do
     print ast
     print result
 {- Example expressions
-S $ E $ Be $ And (B True) (B True)      True && True
-S $ E $ Be $ Or (B True) (B False)      True || False
--- ate aqui, tudo OK
-S $ E $ Id $ I "Meu ID"
-S $ C $ A (I "Meu ID") (Sum (N 1) (N 1))
 S $ C $ L (B True) (C (A (I "Meu ID") (Sum (N 1) (N 1))))
-S $ C $ Cs (A (I "Meu ID") (Sum (N 1) (N 1)))) (A (I "Meu ID") (Sum (N 1) (N 1))))
 -}

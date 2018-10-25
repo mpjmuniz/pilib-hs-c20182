@@ -61,3 +61,31 @@ testOr = TestCase $ assertEqual "Or expression test"
 --  Como usar: carregar testes no ghci com ":l Tests", em seguida "runTestTT expressionTests"
 
 expressionTests = TestList [testNum, testBoo, testSum, testSub, testMul, testEq, testNot, testGt, testGe, testLt, testLe, testAnd, testOr]
+
+-- Command tests
+
+testAssign = TestCase $ assertEqual "Assign command test"
+                         (eval $ CmdPiAut (Map.fromList [(I "Meu ID", Loc 1)]) (Map.fromList []) [] [S $ C $ A (I "Meu ID") (Ae (N 5))] [])
+                         (CmdPiAut (Map.fromList [(I "Meu ID", Loc 1)]) (Map.fromList[(Loc 1, Right 5)]) [] [] [])
+
+testCmdSeq = TestCase $ assertEqual "Command Sequence test"
+                         (eval $ CmdPiAut (Map.fromList [(I "Meu ID", Loc 1), (I "Meu ID Denovo", Loc 2)]) (Map.fromList []) [] 
+                                          [S $ C $ Cs (A (I "Meu ID") (Ae (N 5))) (A (I "Meu ID Denovo") (Ae (N 7)))] []) 
+                         (CmdPiAut (Map.fromList [(I "Meu ID", Loc 1), (I "Meu ID Denovo", Loc 2)]) (Map.fromList[(Loc 1, Right 5), (Loc 2, Right 7)]) [] [] [])
+
+testLoop = TestCase $ assertEqual "Loop command test" --TODO: implementar na gramática possibilidade de comparação entre referência e valor, e soma de referência e valor
+                         (eval $ CmdPiAut (Map.fromList [(I "Meu ID", Loc 1)]) (Map.fromList []) [S $ C $ L (B True) (S $ C $ A (I "Meu ID") (Ae (Sum (I "Meu ID") (N 1))))] [] [])
+                         (CmdPiAut (Map.fromList [(I "Meu ID", Loc 1)]) (Map.fromList[Loc 1, Right 10]) [] [] [])
+
+commandTests = TestList [testAssign, testCmdSeq, testLoop]
+
+-- Declaration tests
+-- testes restantes
+{-
+testDecSeq
+testBind
+testBlock
+testVr
+testDr
+testRf
+-}
