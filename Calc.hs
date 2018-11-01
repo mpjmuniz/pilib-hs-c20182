@@ -1,4 +1,4 @@
-module Calc where
+module Main where
 import Parser
 import Lexer
 import Data.Dynamic
@@ -123,6 +123,8 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                       S (E (Id id))                -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' id e) s) : v} 
                                       S (D (Bi id exp))            -> cpa{cnt = S (E exp) : K KWBind : tail c, val = Vid id : v}
                                       S (C (Bl decl cmd))          -> cpa{cnt = S (D decl) : K KWDec : S (C cmd) : tail c, val = Vls l : v, locs = []}
+                                      K KWRef   -> let loc = (Map.size s) + 1 in 
+                                                             cpa{cnt = tail c, sto = Map.insert (Loc loc) (storeValue (head v)) s, val = Vl (Loc loc) : (tail v), locs = loc : l}
                                       x -> let (va:vb:vs) = v in case x of
                                            K KWSum               -> cpa{cnt = tail c, val = Vi (ival va + ival vb)  : vs}
                                            K KWSub               -> cpa{cnt = tail c, val = Vi (ival va - ival vb)  : vs}
@@ -138,8 +140,7 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
 -- esperar erros como se va for loop, identifier ou command
                                            K KWLoop  -> cpa{cnt = if(bval $ va) then S (C $ L (beval vb) (cmdval vb)) : tail c 
                                                                                 else tail c ,val = vs}
-                                           K KWRef   -> let loc = (Map.size s) + 1 in 
-                                                             cpa{cnt = tail c, sto = Map.insert (Loc loc) (storeValue va) s, val = Vl (Loc loc) : vs, locs = loc : l}
+                                           
                                            K KWBind  -> cpa{cnt = tail c, val = (Bng (xval vb) (itval va)) : vs} 
                                            K KWDec   -> cpa{cnt = tail c, val = tail v, env = Map.insert (idtval (head v)) (lcval (head v)) e}
                                            K KWBlk   -> cpa{cnt = tail c, val = tail vs, env = enval va, sto = Map.filterWithKey (\k _ -> not (k `elem` (lvals vb))) s, 
@@ -147,15 +148,15 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
 -- outra possibilidade: Value incluir o tipo env, e empilhar o env no ValueStack
 main :: IO ()
 main = do
-    --s <- readFile "C:\\Users\\rodri\\OneDrive\\Documentos\\compiladores\\program.txt"
-    --print s
-    --let ast = parseCalc (scanTokens s)
-    let ast = Ae $ Sum (N 1) (N 1)
+    s <- getLine
+    print s
+    let ast = parseCalc (scanTokens s)
+  -- let ast = Ae $ Sum (N 1) (N 1)
     --let ast = Comm (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1)))
     --let ast = Comm (CSeq (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1))) (Assign (Id "Meu ID Denovo!") (Aexp $ Sum (Num 1) (Num 1))))
     --let ast = Comm (Loop (Eq (Boo False) (Boo False)) (Assign (Id "Meu ID") (Aexp $ Sum (Num 1) (Num 1))))
     --let ast = Comm (CSeq (Assign (Id "Meu ID") (Aexp $ Num 1)) (Loop (Lt (Id "Meu ID") (Num 5)) (Assign (Id "Meu ID") (Aexp $ Sum (Id "Meu ID") (Num 1)))))
-    let aut = CmdPiAut (Map.fromList []) (Map.fromList []) [] [S $ E $ ast] []
+    let aut = CmdPiAut (Map.fromList []) (Map.fromList []) [] [S $ ast] []
     let result = eval aut
     print ast
     print result
