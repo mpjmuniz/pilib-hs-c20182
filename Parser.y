@@ -50,19 +50,20 @@ Sttmnt : Expr                    { E $1 }
 
 Expr : Aexpr                     { Ae $1 }
      | Bexpr                     { Be $1 }
-     | Identifier                { Id $1 }
+     
     	  
 Aexpr : '-' Aexpr                  { Mul (N(-1)) $2 }
-      | Expr '+' Aexpr             { Sum $1 $3 }
+      | Aexpr '+' Aexpr             { Sum $1 $3 }
       | Aexpr '-' Aexpr            { Sub $1 $3 }
       | Aexpr '*' Aexpr            { Mul $1 $3 }
       | '(' Aexpr ')'              { $2 }
+	  | Identifier                { Id $1 }
       | int                        { N $1 }
 	
-Bexpr : Expr '<' Aexpr             { Lt $1 $3 }
-      | Expr '>' Aexpr             { Gt $1 $3 }
-      | Expr '<=' Aexpr            { Le $1 $3 }
-      | Expr '>=' Aexpr            { Ge $1 $3 }
+Bexpr : Aexpr '<' Aexpr             { Lt $1 $3 }
+      | Aexpr '>' Aexpr             { Gt $1 $3 }
+      | Aexpr '<=' Aexpr            { Le $1 $3 }
+      | Aexpr '>=' Aexpr            { Ge $1 $3 }
       | Bexpr '==' Bexpr           { Eq $1 $3 }
       | Bexpr '&&' Bexpr           { And $1 $3 }
       | Bexpr '||' Bexpr           { Or $1 $3 }
@@ -90,26 +91,26 @@ data Statement = E Expression
                | D Declaration deriving (Show, Eq)
 
 data Expression = Ae ArithmeticExpression 
-                | Be BooleanExpression 
-                | Id Identifier -- será que não é Id String ?
+                | Be BooleanExpression                
                 | Rf Expression -- será que não é Rf Reference ?
                 | Dr Identifier
                 | Vr Identifier deriving (Show, Eq) 
 
 data ArithmeticExpression = N   Int 
-                          | Sum Expression ArithmeticExpression  
+                          | Sum ArithmeticExpression ArithmeticExpression  
                           | Sub ArithmeticExpression ArithmeticExpression
+						  | Id Identifier -- será que não é Id String ?
                           | Mul ArithmeticExpression ArithmeticExpression deriving (Show, Eq)
 
 data BooleanExpression = B   Bool 
                        | Not BooleanExpression 
                        | Eq  BooleanExpression    BooleanExpression 
                        | And BooleanExpression    BooleanExpression  
-                       | Or  BooleanExpression    BooleanExpression  
-                       | Gt  Expression ArithmeticExpression 
-                       | Ge  Expression ArithmeticExpression
-					   | Lt  Expression ArithmeticExpression
-                       | Le  Expression ArithmeticExpression deriving (Show, Eq)
+                       | Or  BooleanExpression    BooleanExpression                     					   
+                       | Gt  ArithmeticExpression ArithmeticExpression 
+                       | Ge  ArithmeticExpression ArithmeticExpression
+					   | Lt  ArithmeticExpression ArithmeticExpression
+                       | Le  ArithmeticExpression ArithmeticExpression deriving (Show, Eq)
 
 data Command = A  Identifier Expression
              | L  BooleanExpression Command

@@ -98,16 +98,16 @@ eval cpa@(DeclPiAut e s v c l)
 eval :: CmdPiAut -> CmdPiAut
 eval cpa@(CmdPiAut {cnt = []}) = cpa
 eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
-                                      S (E (Ae (Sum aex1 aex2)))   -> cpa{cnt = S (E aex1) : S (E (Ae aex2)) : K KWSum : tail c} 
+                                      S (E (Ae (Sum aex1 aex2)))   -> cpa{cnt = S (E (Ae aex1)) : S (E (Ae aex2)) : K KWSum : tail c} 
                                       S (E (Ae (Sub aex1 aex2)))   -> cpa{cnt = S (E (Ae aex2)) : S (E (Ae aex1)) : K KWSub : tail c}
                                       S (E (Ae (Mul aex1 aex2)))   -> cpa{cnt = S (E (Ae aex1)) : S (E (Ae aex2)) : K KWMul : tail c}
                                       S (E (Be (Eq  exp1 exp2)))   -> cpa{cnt = S (E (Be exp1)) : S (E (Be exp2)) : K KWEq  : tail c} 
                                       S (E (Be (Or  exp1 exp2)))   -> cpa{cnt = S (E (Be exp1)) : S (E (Be exp2)) : K KWOr  : tail c} 
                                       S (E (Be (And exp1 exp2)))   -> cpa{cnt = S (E (Be exp1)) : S (E (Be exp2)) : K KWAnd : tail c} 
-                                      S (E (Be (Lt  exp1 exp2)))   -> cpa{cnt = S (E exp1) : S (E (Ae exp2)) : K KWLt  : tail c} 
-                                      S (E (Be (Le  exp1 exp2)))   -> cpa{cnt = S (E exp1) : S (E (Ae exp2)) : K KWLe  : tail c} 
-                                      S (E (Be (Ge  exp1 exp2)))   -> cpa{cnt = S (E exp1) : S (E (Ae exp2)) : K KWGe  : tail c} 
-                                      S (E (Be (Gt  exp1 exp2)))   -> cpa{cnt = S (E exp1) : S (E (Ae exp2)) : K KWGt  : tail c} 
+                                      S (E (Be (Lt  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp1)) : S (E (Ae exp2)) : K KWLt  : tail c} 
+                                      S (E (Be (Le  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp1)) : S (E (Ae exp2)) : K KWLe  : tail c} 
+                                      S (E (Be (Ge  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp1)) : S (E (Ae exp2)) : K KWGe  : tail c} 
+                                      S (E (Be (Gt  exp1 exp2)))   -> cpa{cnt = S (E (Ae exp1)) : S (E (Ae exp2)) : K KWGt  : tail c} 
                                       S (E (Be (Not ex)))          -> cpa{cnt = S (E (Be ex))   : K KWNot : tail c}
                                       S (E (Ae (N intval)))        -> cpa{cnt = tail c, val = Vi intval : v}
                                       S (E (Be (B booval)))        -> cpa{cnt = tail c, val = Vb booval : v}
@@ -120,7 +120,7 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                       S (E (Vr idt))               -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' idt e) s) : v}
                                       S (D (Ds dec1 dec2))         -> cpa{cnt = S (D dec1) : S (D dec2) : tail c}
                                       K KWNot                      -> cpa{cnt = tail c, val = Vb (not $ bval $ head v) : tail v}
-                                      S (E (Id id))                -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' id e) s) : v} 
+                                      S (E (Ae (Id id)))                -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' id e) s) : v} 
                                       S (D (Bi id exp))            -> cpa{cnt = S (E exp) : K KWBind : tail c, val = Vid id : v}
                                       S (C (Bl decl cmd))          -> cpa{cnt = S (D decl) : K KWDec : S (C cmd) : tail c, val = Vls l : v, locs = []}
                                       K KWRef   -> let loc = (Map.size s) + 1 in 
