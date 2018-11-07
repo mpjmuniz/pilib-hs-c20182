@@ -46,34 +46,38 @@ import qualified Data.Map.Strict as Map
 
 Sttmnt : Expr                    { E $1 }
        | Cmd                     { C $1 }
+	   | Dec                     { D $1 }
 
 Expr : Aexpr                     { Ae $1 }
      | Bexpr                     { Be $1 }
      | Identifier                { Id $1 }
     	  
 Aexpr : '-' Aexpr                  { Mul (N(-1)) $2 }
-      | Aexpr '+' Aexpr            { Sum $1 $3 }
+      | Expr '+' Aexpr             { Sum $1 $3 }
       | Aexpr '-' Aexpr            { Sub $1 $3 }
       | Aexpr '*' Aexpr            { Mul $1 $3 }
       | '(' Aexpr ')'              { $2 }
       | int                        { N $1 }
 	
-Bexpr : Aexpr '<' Aexpr            { Lt $1 $3 }
-      | Aexpr '>' Aexpr            { Gt $1 $3 }
-      | Aexpr '<=' Aexpr           { Le $1 $3 }
-      | Aexpr '>=' Aexpr           { Ge $1 $3 }
+Bexpr : Expr '<' Aexpr             { Lt $1 $3 }
+      | Expr '>' Aexpr             { Gt $1 $3 }
+      | Expr '<=' Aexpr            { Le $1 $3 }
+      | Expr '>=' Aexpr            { Ge $1 $3 }
       | Bexpr '==' Bexpr           { Eq $1 $3 }
       | Bexpr '&&' Bexpr           { And $1 $3 }
       | Bexpr '||' Bexpr           { Or $1 $3 }
       | '(' Bexpr ')'              { $2 }
       | true                       { B True }
       | false                      { B False }
+	  
 
 Cmd : Identifier ':=' Expr                   {A $1 $3} 
     | while '(' Bexpr ')' do '{' Cmd '}'     {L $3 $7}
     | Cmd ';' Cmd                            {Cs $1 $3}
 
 Identifier:  var                   {I $1}
+
+Dec : Dec ';' Dec                            {Ds $1 $3}
 
 {
 parseError :: [Token] -> a
@@ -93,7 +97,7 @@ data Expression = Ae ArithmeticExpression
                 | Vr Identifier deriving (Show, Eq) 
 
 data ArithmeticExpression = N   Int 
-                          | Sum ArithmeticExpression ArithmeticExpression  
+                          | Sum Expression ArithmeticExpression  
                           | Sub ArithmeticExpression ArithmeticExpression
                           | Mul ArithmeticExpression ArithmeticExpression deriving (Show, Eq)
 
@@ -102,10 +106,10 @@ data BooleanExpression = B   Bool
                        | Eq  BooleanExpression    BooleanExpression 
                        | And BooleanExpression    BooleanExpression  
                        | Or  BooleanExpression    BooleanExpression  
-                       | Gt  ArithmeticExpression ArithmeticExpression 
-                       | Ge  ArithmeticExpression ArithmeticExpression
-                       | Lt  ArithmeticExpression ArithmeticExpression
-                       | Le  ArithmeticExpression ArithmeticExpression deriving (Show, Eq)
+                       | Gt  Expression ArithmeticExpression 
+                       | Ge  Expression ArithmeticExpression
+					   | Lt  Expression ArithmeticExpression
+                       | Le  Expression ArithmeticExpression deriving (Show, Eq)
 
 data Command = A  Identifier Expression
              | L  BooleanExpression Command
@@ -137,3 +141,4 @@ data Value = Vb  { bval :: Bool }
            | En  { lcval :: Location, idtval :: Identifier} deriving (Show, Eq)
 
 }
+
