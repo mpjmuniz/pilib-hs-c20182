@@ -1,4 +1,4 @@
-module Main where
+module Calc where
 import Parser
 import Lexer
 import Data.Dynamic

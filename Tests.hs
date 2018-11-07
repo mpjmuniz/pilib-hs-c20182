@@ -74,8 +74,9 @@ testCmdSeq = TestCase $ assertEqual "Command Sequence test"
                          (CmdPiAut (Map.fromList [(I "Meu ID", Loc 1), (I "Meu ID Denovo", Loc 2)]) (Map.fromList[(Loc 1, Right 5), (Loc 2, Right 7)]) [] [] [])
 
 testLoop = TestCase $ assertEqual "Loop command test" --TODO: implementar na gramática possibilidade de comparação entre referência e valor, e soma de referência e valor
-                         (eval $ CmdPiAut (Map.fromList [(I "Meu ID", Loc 1)]) (Map.fromList []) [S $ C $ L (B True) (S $ C $ A (I "Meu ID") (Ae (Sum (I "Meu ID") (N 1))))] [] [])
-                         (CmdPiAut (Map.fromList [(I "Meu ID", Loc 1)]) (Map.fromList[Loc 1, Right 10]) [] [] [])
+                         (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList []) []
+                                          [S $ C (L (Lt (Id $ I "x") (N 9)) (A (I "x") (Ae (Sum (Id $ I "x") (N 1)))))] [])
+                         (CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList[(Loc 1, Right 9)]) [] [] [])
 
 commandTests = TestList [testAssign, testCmdSeq, testLoop]
 
