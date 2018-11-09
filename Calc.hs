@@ -138,7 +138,7 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                            K KWAnd               -> cpa{cnt = tail c, val = Vb (bval va && bval vb) : vs}
                                            K KWAssign            -> cpa{cnt = tail c, val = vs, sto = Map.insert (lookup' (idval vb) e) (storeValue va) s } 
 -- esperar erros como se va for loop, identifier ou command
-                                           K KWLoop  -> cpa{cnt = if(bval $ va) then S (C $ L (beval vb) (cmdval vb)) : tail c 
+                                           K KWLoop  -> cpa{cnt = if(bval $ va) then (S $ C $ cmdval vb) : S (C $ L (beval vb) (cmdval vb)) : tail c 
                                                                                 else tail c ,val = vs}
                                            
                                            K KWBind  -> cpa{cnt = tail c, val = (Bng (xval vb) (itval va)) : vs} 

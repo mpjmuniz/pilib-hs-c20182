@@ -58,9 +58,13 @@ testAnd = TestCase $ assertEqual "And expression test"
 testOr = TestCase $ assertEqual "Or expression test"
                      (eval $ baseAut [] [S $ E $ Be $ Or (B True) (B False)] [])
                      (baseAut [Vb True] [] [])
+
+testIdLt = TestCase $ assertEqual "Lt expression with Id test"
+                     (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList [(Loc 1, Right 2)]) [] [S $ E $ Be $ Lt (Id $ I "x") (N 4)] [])
+                     (CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList[(Loc 1, Right 2)]) [Vb True] [] [])
 --  Como usar: carregar testes no ghci com ":l Tests", em seguida "runTestTT expressionTests"
 
-expressionTests = TestList [testNum, testBoo, testSum, testSub, testMul, testEq, testNot, testGt, testGe, testLt, testLe, testAnd, testOr]
+expressionTests = TestList [testNum, testBoo, testSum, testSub, testMul, testEq, testNot, testGt, testGe, testLt, testLe, testAnd, testOr, testIdLt]
 
 -- Command tests
 
@@ -73,8 +77,8 @@ testCmdSeq = TestCase $ assertEqual "Command Sequence test"
                                           [S $ C $ Cs (A (I "Meu ID") (Ae (N 5))) (A (I "Meu ID Denovo") (Ae (N 7)))] []) 
                          (CmdPiAut (Map.fromList [(I "Meu ID", Loc 1), (I "Meu ID Denovo", Loc 2)]) (Map.fromList[(Loc 1, Right 5), (Loc 2, Right 7)]) [] [] [])
 
-testLoop = TestCase $ assertEqual "Loop command test" --TODO: implementar na gramática possibilidade de comparação entre referência e valor, e soma de referência e valor
-                         (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList []) []
+testLoop = TestCase $ assertEqual "Loop command test" 
+                         (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList [(Loc 1, Right 1)]) []
                                           [S $ C (L (Lt (Id $ I "x") (N 9)) (A (I "x") (Ae (Sum (Id $ I "x") (N 1)))))] [])
                          (CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList[(Loc 1, Right 9)]) [] [] [])
 
