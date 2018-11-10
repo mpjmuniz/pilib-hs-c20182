@@ -1,15 +1,10 @@
 # pilib-hs-c20182
-Pi lib implementation on haskell, as the project for the Compilers course at UFF, 2018.2
+Implementacao Pi lib em haskell, como projeto para o curso de compiladores na UFF em 2018.2
 
+Para compilar o projeto:
 
-Para rodar o projeto:
-
-alex Lexer.x
-
-happy Parser.y
-
---verificar no codigo Calc.hs, antes de compilar, o caminho para o arquivo que sera lido como entrada do programa
-
-ghc --make Calc.hs   
-
-
+va na pasta raiz do projeto, abra a um terminal e digite:
+`cabal configure --enable-tests`
+`cabal build`
+o executavel do repl para a linguagem imp estara disponivel na pasta dist\build\impterpreter\
+o executavel dos testes rodados estara disponivel na pasta dist\build\p#tests\
