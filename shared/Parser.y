@@ -29,7 +29,10 @@ import qualified Data.Map.Strict as Map
     '&&'    {TokenAnd}
     '||'    {TokenOr}
     ':='    {TokenAssign}
-    var     {TokenVarId $$}
+    id     {TokenVarId $$}
+    var     {TokenVar}
+    let     {TokenLet}
+    in      {TokenIn}
     while   {TokenWhile}
     do      {TokenDo}
     '{'     {TokenLBrace}
@@ -75,10 +78,12 @@ Bexpr : Aexpr '<' Aexpr             { Lt $1 $3 }
 Cmd : Identifier ':=' Expr                   {A $1 $3} 
     | while '(' Bexpr ')' do '{' Cmd '}'     {L $3 $7}
     | Cmd ';' Cmd                            {Cs $1 $3}
+	| let Dec in Cmd                         {Bl $2 $4}
 
-Identifier:  var                   {I $1}
+Identifier:  id                   {I $1}
 
-Dec : Dec ';' Dec                            {Ds $1 $3}
+Dec:  var Identifier ':=' Expr        {Bi $2 $4}
+     |Dec ';' Dec                     {Ds $1 $3}
 
 {
 parseError :: [Token] -> a

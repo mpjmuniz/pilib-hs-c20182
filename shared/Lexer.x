@@ -28,6 +28,9 @@ tokens :-
   \&&                           { \s  -> TokenAnd}
   "||"	                        { \s  -> TokenOr}
   while                         { \s  -> TokenWhile}
+  var                           { \s  -> TokenVar}
+  let                           { \s  -> TokenLet}
+  in                            { \s  -> TokenIn}
   do                            { \s  -> TokenDo}
   \{                            { \s  -> TokenLBrace}
   \}                            { \s  -> TokenRBrace}
@@ -57,6 +60,9 @@ data Token = TokenVarId String
            | TokenMenorIgual
            | TokenAnd
            | TokenOr
+           | TokenVar
+           | TokenLet
+           | TokenIn
            | TokenWhile
            | TokenDo
            | TokenLBrace
