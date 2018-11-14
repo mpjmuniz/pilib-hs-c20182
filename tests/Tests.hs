@@ -92,7 +92,11 @@ testDr = TestCase $ assertEqual "DeRef declaration test"
                          (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList []) [] [(S $ E $ Dr $ I "x")] [])
                          (CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList []) [Vl $ Loc 1] [] [])
 
-declarationsTests = TestList [testRf, testDr]
+testVr = TestCase $ assertEqual "ValRef declaration test"
+                         (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList [(Loc 1, Right 2), (Loc 2, Right 1)]) [] [(S $ E $ Vr $ I "x")] [])
+                         (CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList [(Loc 1, Right 2), (Loc 2, Right 1)]) [Vi 1] [] [])
+
+declarationsTests = TestList [testRf, testDr, testVr]
 
 -- Declaration tests
 -- testes restantes

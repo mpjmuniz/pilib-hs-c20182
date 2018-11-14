@@ -61,7 +61,8 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                       S (C (L bexp cmd))           -> cpa{cnt = S (E (Be bexp)) : K KWLoop : tail c, val = Vlp bexp cmd : v} -- faltando push da bexp antes do Vlp
                                       S (E (Rf exp))               -> cpa{cnt = S (E exp) : K KWRef : tail c}
                                       S (E (Dr idt))               -> cpa{cnt = tail c, val = Vl (lookup' idt e) : v}
-                                      S (E (Vr idt))               -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' idt e) s) : v}
+                                      S (E (Vr idt))               -> cpa{cnt = tail c,
+                                                                          val = evalStorable (lookup' (Loc (ival (evalStorable (lookup' (lookup' idt e) s)))) s) : v}
                                       S (D (Ds dec1 dec2))         -> cpa{cnt = S (D dec1) : S (D dec2) : tail c}
                                       K KWNot                      -> cpa{cnt = tail c, val = Vb (not $ bval $ head v) : tail v}
                                       S (E (Ae (Id id)))                -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' id e) s) : v} 
