@@ -17,7 +17,7 @@ data CmdPiAut = CmdPiAut { env :: Map.Map Identifier Location, -- TODO: verifica
                            sto :: Map.Map Location Storable, 
                            val :: ValueStack,
                            cnt :: ControlStack,
-                           locs :: [Int]
+                           locs :: [Int] -- TODO: mudar para Location
                          } deriving (Show, Eq)
 
 lookup' :: Ord k => k -> Map.Map k a -> a
@@ -68,7 +68,11 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                       S (D (Bi id exp))            -> cpa{cnt = S (E exp) : K KWBind : tail c, val = Vid id : v}
                                       S (C (Bl decl cmd))          -> cpa{cnt = S (D decl) : K KWDec : S (C cmd) : tail c, val = Vls l : v, locs = []}
                                       K KWRef   -> let loc = (Map.size s) + 1 in 
-                                                             cpa{cnt = tail c, sto = Map.insert (Loc loc) (storeValue (head v)) s, val = Vl (Loc loc) : (tail v), locs = loc : l}
+                                                             cpa{ cnt = tail c
+                                                                , sto = Map.insert (Loc loc) (storeValue (head v)) s
+                                                                , val = Vl (Loc loc) : (tail v)
+                                                                , locs = loc : l
+                                                                }
                                       x -> let (va:vb:vs) = v in case x of
                                            K KWSum               -> cpa{cnt = tail c, val = Vi (ival va + ival vb)  : vs}
                                            K KWSub               -> cpa{cnt = tail c, val = Vi (ival va - ival vb)  : vs}

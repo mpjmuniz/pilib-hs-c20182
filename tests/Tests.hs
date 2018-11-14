@@ -84,6 +84,16 @@ testLoop = TestCase $ assertEqual "Loop command test"
 
 commandTests = TestList [testAssign, testCmdSeq, testLoop]
 
+testRf = TestCase $ assertEqual "Ref declaration test"
+                         (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [(S $ E $ Rf $ Ae $ N 1)] [])
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 1)]) [Vl $ Loc 1] [] [1])
+
+testDr = TestCase $ assertEqual "DeRef declaration test"
+                         (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList []) [] [(S $ E $ Dr $ I "x")] [])
+                         (CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList []) [Vl $ Loc 1] [] [])
+
+declarationsTests = TestList [testRf, testDr]
+
 -- Declaration tests
 -- testes restantes
 {-
@@ -92,5 +102,4 @@ testBind
 testBlock
 testVr
 testDr
-testRf
 -}
