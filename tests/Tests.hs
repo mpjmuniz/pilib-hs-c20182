@@ -96,7 +96,15 @@ testVr = TestCase $ assertEqual "ValRef declaration test"
                          (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList [(Loc 1, Right 2), (Loc 2, Right 1)]) [] [(S $ E $ Vr $ I "x")] [])
                          (CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList [(Loc 1, Right 2), (Loc 2, Right 1)]) [Vi 1] [] [])
 
-declarationsTests = TestList [testRf, testDr, testVr]
+testBindEnvs = TestCase $ assertEqual "Bind declaration test, with plus envs"
+                         (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [Env (Map.fromList [(I "y", Loc 2)])] [(S $ D $ Bi (I "x") (Rf (Ae (N 7))))] [])
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 7)]) [Env (Map.fromList [(I "y", Loc 2), (I "x", Loc 1)])] [] [1])
+
+testBindOnly = TestCase $ assertEqual "Bind declaration test, bind mapping only"
+                         (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [(S $ D $ Bi (I "x") (Rf (Ae (N 7))))] [])
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 7)]) [Env (Map.fromList [(I "x", Loc 1)])] [] [1])
+
+declarationsTests = TestList [testRf, testDr, testVr, testBindOnly, testBindEnvs]
 
 -- Declaration tests
 -- testes restantes

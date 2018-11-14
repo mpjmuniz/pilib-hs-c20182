@@ -3,6 +3,7 @@ import Parser
 import Lexer
 import Data.Dynamic
 import Data.Maybe
+import Data.Typeable
 import System.IO
 import qualified Data.Map.Strict as Map
 
@@ -31,6 +32,7 @@ evalStorable (Left  x) = Vb x
 storeValue :: Value -> Storable
 storeValue (Vi x) = Right x
 storeValue (Vb x) = Left x
+storeValue _ = Right 0
 
 {-
  - Evaluation function. Given an automata, it recursively evaluates the expression in it's control stack
@@ -86,11 +88,14 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                            K KWOr                -> cpa{cnt = tail c, val = Vb (bval va || bval vb) : vs}
                                            K KWAnd               -> cpa{cnt = tail c, val = Vb (bval va && bval vb) : vs}
                                            K KWAssign            -> cpa{cnt = tail c, val = vs, sto = Map.insert (lookup' (idval vb) e) (storeValue va) s } 
--- esperar erros como se va for loop, identifier ou command
                                            K KWLoop  -> cpa{cnt = if(bval $ va) then (S $ C $ cmdval vb) : S (C $ L (beval vb) (cmdval vb)) : tail c 
                                                                                 else tail c ,val = vs}
-                                           
-                                           K KWBind  -> cpa{cnt = tail c, val = (Bng (xval vb) (itval va)) : vs} 
+                                           K KWBind  -> cpa{cnt = tail c,
+                                                            val = case vs of
+                                                                    [] -> (Env (Map.fromList [(idval vb, lval va)])) : []
+                                                                    env:vls -> case env of
+                                                                                Env map -> (Env (Map.insert (idval vb) (lval va) (enval env))) : vls 
+                                                                                otherwise -> (Env (Map.fromList [(idval vb, lval va)])) : vls}
                                            K KWDec   -> cpa{cnt = tail c, val = tail v, env = Map.insert (idtval (head v)) (lcval (head v)) e}
                                            K KWBlk   -> cpa{cnt = tail c, val = tail vs, env = enval va, sto = Map.filterWithKey (\k _ -> not (k `elem` (lvals vb))) s, 
                                                             locs = lvls (head vs)}
