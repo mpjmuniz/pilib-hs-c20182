@@ -13,7 +13,3 @@ o executavel dos testes rodados estara disponivel na pasta dist\build\p#tests\
 
 # TODO
 - implementar bindable values: integer, boolean ou location
-- adicionar Dec aos statements
-- adicionar ValRef(Id) as expressoes
-- adicionar tipo Dec como sendo Bind(Id, Exp), DSeq(Dec, Dec)
-- adicionar Blk(Dec, Cmd) aos Cmds

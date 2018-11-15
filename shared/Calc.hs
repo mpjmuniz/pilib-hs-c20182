@@ -18,7 +18,7 @@ data CmdPiAut = CmdPiAut { env :: Map.Map Identifier Location, -- TODO: verifica
                            sto :: Map.Map Location Storable, 
                            val :: ValueStack,
                            cnt :: ControlStack,
-                           locs :: [Int] -- TODO: mudar para Location
+                           locs :: [Location] 
                          } deriving (Show, Eq)
 
 lookup' :: Ord k => k -> Map.Map k a -> a
@@ -69,11 +69,11 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                       K KWNot                      -> cpa{cnt = tail c, val = Vb (not $ bval $ head v) : tail v}
                                       S (E (Ae (Id id)))                -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' id e) s) : v} 
                                       S (D (Bi id exp))            -> cpa{cnt = S (E exp) : K KWBind : tail c, val = Vid id : v}
-                                      S (C (Bl decl cmd))          -> cpa{cnt = S (D decl) : K KWDec : S (C cmd) : tail c, val = Vls l : v, locs = []}
-                                      K KWRef   -> let loc = (Map.size s) + 1 in 
+                                      S (C (Bl decl cmd))          -> cpa{cnt = S (D decl) : K KWDec : S (C cmd) : K KWBlk : tail c, val = Lvls l : v, locs = []}
+                                      K KWRef   -> let loc = Loc ((Map.size s) + 1) in 
                                                              cpa{ cnt = tail c
-                                                                , sto = Map.insert (Loc loc) (storeValue (head v)) s
-                                                                , val = Vl (Loc loc) : (tail v)
+                                                                , sto = Map.insert loc (storeValue (head v)) s
+                                                                , val = Vl loc : (tail v)
                                                                 , locs = loc : l
                                                                 }
                                       x -> let (va:vb:vs) = v in case x of
@@ -95,7 +95,12 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                                                     [] -> (Env (Map.fromList [(idval vb, lval va)])) : []
                                                                     env:vls -> case env of
                                                                                 Env map -> (Env (Map.insert (idval vb) (lval va) (enval env))) : vls 
-                                                                                otherwise -> (Env (Map.fromList [(idval vb, lval va)])) : vls}
-                                           K KWDec   -> cpa{cnt = tail c, val = tail v, env = Map.insert (idtval (head v)) (lcval (head v)) e}
-                                           K KWBlk   -> cpa{cnt = tail c, val = tail vs, env = enval va, sto = Map.filterWithKey (\k _ -> not (k `elem` (lvals vb))) s, 
-                                                            locs = lvls (head vs)}
+                                                                                otherwise -> (Env (Map.fromList [(idval vb, lval va)])) : vs} 
+                                           K KWDec   -> cpa{cnt = tail c,
+                                                            val = Env e : tail v,
+                                                            env = Map.union (enval va) e}
+                                           K KWBlk   -> cpa{cnt = tail c,
+                                                            val = vs,
+                                                            env = enval va, 
+                                                            sto = Map.filterWithKey (\k _ -> not (k `elem` (lvals vb))) s, 
+                                                            locs = lvals vb}

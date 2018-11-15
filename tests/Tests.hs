@@ -86,7 +86,7 @@ commandTests = TestList [testAssign, testCmdSeq, testLoop]
 
 testRf = TestCase $ assertEqual "Ref declaration test"
                          (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [(S $ E $ Rf $ Ae $ N 1)] [])
-                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 1)]) [Vl $ Loc 1] [] [1])
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 1)]) [Vl $ Loc 1] [] [Loc 1])
 
 testDr = TestCase $ assertEqual "DeRef declaration test"
                          (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList []) [] [(S $ E $ Dr $ I "x")] [])
@@ -98,13 +98,21 @@ testVr = TestCase $ assertEqual "ValRef declaration test"
 
 testBindEnvs = TestCase $ assertEqual "Bind declaration test, with plus envs"
                          (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [Env (Map.fromList [(I "y", Loc 2)])] [(S $ D $ Bi (I "x") (Rf (Ae (N 7))))] [])
-                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 7)]) [Env (Map.fromList [(I "y", Loc 2), (I "x", Loc 1)])] [] [1])
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 7)]) [Env (Map.fromList [(I "y", Loc 2), (I "x", Loc 1)])] [] [Loc 1])
 
 testBindOnly = TestCase $ assertEqual "Bind declaration test, bind mapping only"
                          (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [(S $ D $ Bi (I "x") (Rf (Ae (N 7))))] [])
-                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 7)]) [Env (Map.fromList [(I "x", Loc 1)])] [] [1])
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 7)]) [Env (Map.fromList [(I "x", Loc 1)])] [] [Loc 1])
 
-declarationsTests = TestList [testRf, testDr, testVr, testBindOnly, testBindEnvs]
+testDec = TestCase $ assertEqual "DecKW test"
+                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+                         (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [(S $ C $ Bl (Bi (I "x") (Rf (Ae (N 7)))) (A (I "x") (Ae (N 4))))] [])
+
+testBlk = TestCase $ assertEqual "Block declaration test"
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 4)]) [] [] [])
+                         (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [(S $ C $ Bl (Bi (I "x") (Rf (Ae (N 7)))) (A (I "x") (Ae (N 4))))] [])
+
+declarationsTests = TestList [testRf, testDr, testVr, testBindOnly, testBindEnvs, testBlk]
 
 -- Declaration tests
 -- testes restantes

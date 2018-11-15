@@ -104,7 +104,7 @@ data Expression = Ae ArithmeticExpression
 data ArithmeticExpression = N   Int 
                           | Sum ArithmeticExpression ArithmeticExpression  
                           | Sub ArithmeticExpression ArithmeticExpression
-						  | Id Identifier -- será que não é Id String ?
+			  | Id Identifier -- será que não é Id String ?
                           | Mul ArithmeticExpression ArithmeticExpression deriving (Show, Eq)
 
 data BooleanExpression = B   Bool 
@@ -114,7 +114,7 @@ data BooleanExpression = B   Bool
                        | Or  BooleanExpression    BooleanExpression                     					   
                        | Gt  ArithmeticExpression ArithmeticExpression 
                        | Ge  ArithmeticExpression ArithmeticExpression
-					   | Lt  ArithmeticExpression ArithmeticExpression
+		       | Lt  ArithmeticExpression ArithmeticExpression
                        | Le  ArithmeticExpression ArithmeticExpression deriving (Show, Eq)
 
 data Command = A  Identifier Expression
@@ -140,7 +140,6 @@ data Value = Vb  { bval :: Bool }
            | Vid { idval :: Identifier } 
            | Vcm { cval :: Command } 
            | Vl  { lval :: Location } 
-           | Vls { lvls :: [Int] } 
            | Lvls{ lvals :: [Location] } 
            | Bng { xval :: Expression, itval :: Identifier} 
            | Env { enval :: Map.Map Identifier Location} 
