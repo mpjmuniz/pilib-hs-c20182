@@ -91,26 +91,23 @@ Dec:  var Identifier ':=' Reference   {Bi $2 $4}
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
 
-
-
-
-data Control = S Statement | K Keyword deriving (Show, Eq)
+data Control = Ab Abstraction | S Statement | K Keyword deriving (Show, Eq, Ord)
 
 data Statement = E Expression
                | C Command
-               | D Declaration deriving (Show, Eq)
+               | D Declaration deriving (Show, Eq, Ord)
 
 data Expression = Ae ArithmeticExpression 
                 | Be BooleanExpression                
                 | Rf Expression -- será que não é Rf Reference ?
                 | Dr Identifier
-                | Vr Identifier deriving (Show, Eq) 
+                | Vr Identifier deriving (Show, Eq, Ord) 
 
 data ArithmeticExpression = N   Int 
                           | Sum ArithmeticExpression ArithmeticExpression  
                           | Sub ArithmeticExpression ArithmeticExpression
-						  | Id Identifier -- será que não é Id String ?
-                          | Mul ArithmeticExpression ArithmeticExpression deriving (Show, Eq)
+                          | Id Identifier -- será que não é Id String ?
+                          | Mul ArithmeticExpression ArithmeticExpression deriving (Show, Eq, Ord)
 
 data BooleanExpression = B   Bool 
                        | Not BooleanExpression 
@@ -119,24 +116,31 @@ data BooleanExpression = B   Bool
                        | Or  BooleanExpression    BooleanExpression                     					   
                        | Gt  ArithmeticExpression ArithmeticExpression 
                        | Ge  ArithmeticExpression ArithmeticExpression
-					   | Lt  ArithmeticExpression ArithmeticExpression
-                       | Le  ArithmeticExpression ArithmeticExpression deriving (Show, Eq)
+                       | Lt  ArithmeticExpression ArithmeticExpression
+                       | Le  ArithmeticExpression ArithmeticExpression deriving (Show, Eq, Ord)
 
 data Command = A  Identifier Expression
              | L  BooleanExpression Command
              | Cs Command Command 
-             | Bl Declaration Command deriving (Show, Eq)
+             | Bl Declaration Command
+             | Call Identifier [Expression] deriving (Show, Eq, Ord)
 
 data Declaration = Bi Identifier Expression
-                 | Ds Declaration Declaration deriving (Show, Eq)
+                 | Ds Declaration Declaration
+                 | Bn Identifier Abstraction deriving (Show, Eq, Ord)
+
+data Abstraction = Abs [Identifier] Command deriving (Show, Eq, Ord)
+
+data Closure = Clj { formals :: [Identifier], blk :: Command, local :: (Map.Map Identifier Location)} deriving (Show, Eq, Ord)
 
 data Identifier = I String deriving (Show, Eq, Ord)
 
 data Keyword = KWSum | KWMul | KWSub | KWNot | KWAnd | KWEq | KWOr | KWLt | KWLe | KWGt | KWGe
              | KWAssign | KWLoop | KWRef
-             | KWCns | KWDec | KWBlk | KWBind | KWDSeq deriving (Show, Eq)
+             | KWCns | KWDec | KWBlk | KWBind | KWDSeq
+             | KWCall Identifier Int deriving (Show, Eq, Ord)
  
-data Location = Loc Int | Sto Storable deriving (Show, Eq, Ord) 
+data Location = Loc Int | Sto Storable | Cl {cl :: Closure} deriving (Show, Eq, Ord) 
 type Storable = Either Bool Int 
 
 data Value = Vb  { bval :: Bool } 
@@ -149,6 +153,8 @@ data Value = Vb  { bval :: Bool }
            | Lvls{ lvals :: [Location] } 
            | Bng { xval :: Expression, itval :: Identifier} 
            | Env { enval :: Map.Map Identifier Location} 
-           | En  { lcval :: Location, idtval :: Identifier} deriving (Show, Eq)
+           | En  { lcval :: Location, idtval :: Identifier} 
+           | Vclj { cljval :: Closure }
+           | Vabs{ absval :: Abstraction } deriving (Show, Eq)
 
 }

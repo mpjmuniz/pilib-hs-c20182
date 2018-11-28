@@ -34,6 +34,14 @@ storeValue (Vi x) = Right x
 storeValue (Vb x) = Left x
 storeValue _ = Right 0
 
+match :: Formals -> Actuals -> Env
+match fl al = if length fl != length al then Map.fromList []
+                                        else match' fl al (Map.fromList []) 
+
+match' :: Formals -> [Value] -> Env -> Env
+match' [] [] e = e
+match' f a e   = zip (map fi f) (map storeValue a)
+
 {-
  - Evaluation function. Given an automata, it recursively evaluates the expression in it's control stack
  -}
@@ -61,15 +69,17 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
 --sto = Map.insert (Loc $ Map.size s + 1) idtf s} segundo implementação em python, semântica formal está confusa
                                       S (C (Cs cmd1 cmd2))         -> cpa{cnt = S (C cmd1) : S (C cmd2) : tail c}
                                       S (C (L bexp cmd))           -> cpa{cnt = S (E (Be bexp)) : K KWLoop : tail c, val = Vlp bexp cmd : v} -- faltando push da bexp antes do Vlp
+                                      S (C (Call idt acts))        -> cpa{cnt = (reverse (map (\a -> S (E (acexp a))) acts)) ++ (K (KWCall idt (length acts)) : tail c)}
                                       S (E (Rf exp))               -> cpa{cnt = S (E exp) : K KWRef : tail c}
                                       S (E (Dr idt))               -> cpa{cnt = tail c, val = Vl (lookup' idt e) : v}
                                       S (E (Vr idt))               -> cpa{cnt = tail c,
                                                                           val = evalStorable (lookup' (Loc (ival (evalStorable (lookup' (lookup' idt e) s)))) s) : v}
                                       S (D (Ds dec1 dec2))         -> cpa{cnt = S (D dec1) : S (D dec2) : tail c}
                                       K KWNot                      -> cpa{cnt = tail c, val = Vb (not $ bval $ head v) : tail v}
-                                      S (E (Ae (Id id)))                -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' id e) s) : v} 
+                                      S (E (Ae (Id id)))           -> cpa{cnt = tail c, val = evalStorable (lookup' (lookup' id e) s) : v} 
                                       S (D (Bi id exp))            -> cpa{cnt = S (E exp) : K KWBind : tail c, val = Vid id : v}
                                       S (C (Bl decl cmd))          -> cpa{cnt = S (D decl) : K KWDec : S (C cmd) : K KWBlk : tail c, val = Lvls l : v, locs = []}
+                                      Ab(Abs formals cmd)          -> cpa{cnt = tail c, val = Vclj (Clj formals cmd e) : v}  
                                       K KWRef   -> let loc = Loc ((Map.size s) + 1) in 
                                                              cpa{ cnt = tail c
                                                                 , sto = Map.insert loc (storeValue (head v)) s
@@ -88,19 +98,24 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                            K KWOr                -> cpa{cnt = tail c, val = Vb (bval va || bval vb) : vs}
                                            K KWAnd               -> cpa{cnt = tail c, val = Vb (bval va && bval vb) : vs}
                                            K KWAssign            -> cpa{cnt = tail c, val = vs, sto = Map.insert (lookup' (idval vb) e) (storeValue va) s } 
-                                           K KWLoop  -> cpa{cnt = if(bval $ va) then (S $ C $ cmdval vb) : S (C $ L (beval vb) (cmdval vb)) : tail c 
-                                                                                else tail c ,val = vs}
-                                           K KWBind  -> cpa{cnt = tail c,
-                                                            val = case vs of
-                                                                    [] -> (Env (Map.fromList [(idval vb, lval va)])) : []
-                                                                    env:vls -> case env of
-                                                                                Env map -> (Env (Map.insert (idval vb) (lval va) (enval env))) : vls 
-                                                                                otherwise -> (Env (Map.fromList [(idval vb, lval va)])) : vs} 
-                                           K KWDec   -> cpa{cnt = tail c,
-                                                            val = Env e : tail v,
-                                                            env = Map.union (enval va) e}
-                                           K KWBlk   -> cpa{cnt = tail c,
-                                                            val = vs,
-                                                            env = enval va, 
-                                                            sto = Map.filterWithKey (\k _ -> not (k `elem` (lvals vb))) s, 
-                                                            locs = lvals vb}
+                                           K KWLoop              -> cpa{cnt = if(bval $ va) then (S $ C $ cmdval vb) : S (C $ L (beval vb) (cmdval vb)) : tail c 
+                                                                                            else tail c ,
+                                                                        val = vs}
+                                           K KWBind              -> cpa{cnt = tail c,
+                                                                        val = case vs of
+                                                                                [] -> (Env (Map.fromList [(idval vb, lval va)])) : []
+                                                                                env:vls -> case env of
+                                                                                    Env map -> (Env (Map.insert (idval vb) (lval va) (enval env))) : vls 
+                                                                                    otherwise -> (Env (Map.fromList [(idval vb, lval va)])) : vs} 
+                                           K KWDec               -> cpa{cnt = tail c,
+                                                                        val = Env e : tail v,
+                                                                        env = Map.union (enval va) e}
+                                           K KWBlk               -> cpa{cnt = tail c,
+                                                                        val = vs,
+                                                                        env = enval va, 
+                                                                        sto = Map.filterWithKey (\k _ -> not (k `elem` (lvals vb))) s, 
+                                                                        locs = lvals vb}
+                                           K (KWCall id n)       -> cpa{cnt = let b = blk (cl (lookup' id e)) in
+                                                                             (S $ C b) : K KWBlk : tail c, 
+                                                                        val = Env e : drop n v,
+                                                                        env = Map.union () e }
