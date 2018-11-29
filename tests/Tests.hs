@@ -60,8 +60,8 @@ testOr = TestCase $ assertEqual "Or expression test"
                      (baseAut [Vb True] [] [])
 
 testIdLt = TestCase $ assertEqual "Lt expression with Id test"
-                     (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList [(Loc 1, Right 2)]) [] [S $ E $ Be $ Lt (Id $ I "x") (N 4)] [])
-                     (CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList[(Loc 1, Right 2)]) [Vb True] [] [])
+                     (eval $ CmdPiAut (Map.fromList [(I "x", Lo 1)]) (Map.fromList [(1, Sint 2)]) [] [S $ E $ Be $ Lt (Id $ I "x") (N 4)] [])
+                     (CmdPiAut (Map.fromList [(I "x", Lo 1)]) (Map.fromList[(1, Sint 2)]) [Vb True] [] [])
 --  Como usar: carregar testes no ghci com ":l Tests", em seguida "runTestTT expressionTests"
 
 expressionTests = TestList [testNum, testBoo, testSum, testSub, testMul, testEq, testNot, testGt, testGe, testLt, testLe, testAnd, testOr, testIdLt]
@@ -69,57 +69,61 @@ expressionTests = TestList [testNum, testBoo, testSum, testSub, testMul, testEq,
 -- Command tests
 
 testAssign = TestCase $ assertEqual "Assign command test"
-                         (eval $ CmdPiAut (Map.fromList [(I "Meu ID", Loc 1)]) (Map.fromList []) [] [S $ C $ A (I "Meu ID") (Ae (N 5))] [])
-                         (CmdPiAut (Map.fromList [(I "Meu ID", Loc 1)]) (Map.fromList[(Loc 1, Right 5)]) [] [] [])
+                         (eval $ CmdPiAut (Map.fromList [(I "Meu ID", Lo 1)]) (Map.fromList []) [] [S $ C $ A (I "Meu ID") (Ae (N 5))] [])
+                         (CmdPiAut (Map.fromList [(I "Meu ID", Lo 1)]) (Map.fromList[(1, Sint 5)]) [] [] [])
 
 testCmdSeq = TestCase $ assertEqual "Command Sequence test"
-                         (eval $ CmdPiAut (Map.fromList [(I "Meu ID", Loc 1), (I "Meu ID Denovo", Loc 2)]) (Map.fromList []) [] 
+                         (eval $ CmdPiAut (Map.fromList [(I "Meu ID", Lo 1), (I "Meu ID Denovo", Lo 2)]) (Map.fromList []) [] 
                                           [S $ C $ Cs (A (I "Meu ID") (Ae (N 5))) (A (I "Meu ID Denovo") (Ae (N 7)))] []) 
-                         (CmdPiAut (Map.fromList [(I "Meu ID", Loc 1), (I "Meu ID Denovo", Loc 2)]) (Map.fromList[(Loc 1, Right 5), (Loc 2, Right 7)]) [] [] [])
+                         (CmdPiAut (Map.fromList [(I "Meu ID", Lo 1), (I "Meu ID Denovo", Lo 2)]) (Map.fromList[(1, Sint 5), (2, Sint 7)]) [] [] [])
 
 testLoop = TestCase $ assertEqual "Loop command test" 
-                         (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList [(Loc 1, Right 1)]) []
+                         (eval $ CmdPiAut (Map.fromList [(I "x", Lo 1)]) (Map.fromList [(1, Sint 1)]) []
                                           [S $ C (L (Lt (Id $ I "x") (N 9)) (A (I "x") (Ae (Sum (Id $ I "x") (N 1)))))] [])
-                         (CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList[(Loc 1, Right 9)]) [] [] [])
+                         (CmdPiAut (Map.fromList [(I "x", Lo 1)]) (Map.fromList[(1, Sint 9)]) [] [] [])
 
 commandTests = TestList [testAssign, testCmdSeq, testLoop]
 
 testRf = TestCase $ assertEqual "Ref declaration test"
                          (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [(S $ E $ Rf $ Ae $ N 1)] [])
-                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 1)]) [Vl $ Loc 1] [] [Loc 1])
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(1, Sint 1)]) [Vbi $ Lo 1] [] [1])
 
 testDr = TestCase $ assertEqual "DeRef declaration test"
-                         (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList []) [] [(S $ E $ Dr $ I "x")] [])
-                         (CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList []) [Vl $ Loc 1] [] [])
+                         (eval $ CmdPiAut (Map.fromList [(I "x", Lo 1)]) (Map.fromList []) [] [(S $ E $ Dr $ I "x")] [])
+                         (CmdPiAut (Map.fromList [(I "x", Lo 1)]) (Map.fromList []) [Vbi $ Lo 1] [] [])
 
 testVr = TestCase $ assertEqual "ValRef declaration test"
-                         (eval $ CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList [(Loc 1, Right 2), (Loc 2, Right 1)]) [] [(S $ E $ Vr $ I "x")] [])
-                         (CmdPiAut (Map.fromList [(I "x", Loc 1)]) (Map.fromList [(Loc 1, Right 2), (Loc 2, Right 1)]) [Vi 1] [] [])
+                         (eval $ CmdPiAut (Map.fromList [(I "x", Lo 1)]) (Map.fromList [(1, Sint 2), (2, Sint 1)]) [] [(S $ E $ Vr $ I "x")] [])
+                         (CmdPiAut (Map.fromList [(I "x", Lo 1)]) (Map.fromList [(1, Sint 2), (2, Sint 1)]) [Vi 1] [] [])
 
 testBindEnvs = TestCase $ assertEqual "Bind declaration test, with plus envs"
-                         (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [Env (Map.fromList [(I "y", Loc 2)])] [(S $ D $ Bi (I "x") (Rf (Ae (N 7))))] [])
-                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 7)]) [Env (Map.fromList [(I "y", Loc 2), (I "x", Loc 1)])] [] [Loc 1])
+                         (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [Env (Map.fromList [(I "y", Lo 2)])] [(S $ D $ Bi (I "x") (Rf (Ae (N 7))))] [])
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(1, Sint 7)]) [Env (Map.fromList [(I "y", Lo 2), (I "x", Lo 1)])] [] [1])
 
 testBindOnly = TestCase $ assertEqual "Bind declaration test, bind mapping only"
                          (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [(S $ D $ Bi (I "x") (Rf (Ae (N 7))))] [])
-                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 7)]) [Env (Map.fromList [(I "x", Loc 1)])] [] [Loc 1])
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(1, Sint 7)]) [Env (Map.fromList [(I "x", Lo 1)])] [] [1])
 
 testDec = TestCase $ assertEqual "DecKW test"
                          (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
                          (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [(S $ C $ Bl (Bi (I "x") (Rf (Ae (N 7)))) (A (I "x") (Ae (N 4))))] [])
 
 testBlk = TestCase $ assertEqual "Block declaration test"
-                         (CmdPiAut (Map.fromList []) (Map.fromList [(Loc 1, Right 4)]) [] [] [])
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(1, Sint 4)]) [] [] [])
                          (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [(S $ C $ Bl (Bi (I "x") (Rf (Ae (N 7)))) (A (I "x") (Ae (N 4))))] [])
 
 declarationsTests = TestList [testRf, testDr, testVr, testBindOnly, testBindEnvs, testBlk]
 
--- Declaration tests
--- testes restantes
-{-
-testDecSeq
-testBind
-testBlock
-testVr
-testDr
--}
+testAbs = TestCase $ assertEqual "Abstraction test"
+                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+
+testCall = TestCase $ assertEqual "Call test"
+                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+
+testClosure = TestCase $ assertEqual "Closure test"
+                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+
+abstractionsTests = TestList[testAbs, testCall, testClosure]
