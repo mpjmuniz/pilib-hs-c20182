@@ -61,3 +61,15 @@ test-suite p2-tests
   other-modules:       Tests
   hs-source-dirs:      tests
   default-language:    Haskell2010
+
+test-suite p3-tests
+  type:                exitcode-stdio-1.0
+  main-is:             P3Tests.hs
+  build-depends:       base >=4.11 && <4.12,
+                       containers >=0.6 && <0.7,
+                       array >=0.5,
+                       HUnit,
+                       pilibhs
+  other-modules:       Tests
+  hs-source-dirs:      tests
+  default-language:    Haskell2010

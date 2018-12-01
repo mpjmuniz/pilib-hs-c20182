@@ -122,7 +122,7 @@ data BooleanExpression = B   Bool
 data Command = A  Identifier Expression
              | L  BooleanExpression Command
              | Cs Command Command 
-             | Bl Declaration Command
+             | Bl { decl :: Declaration, kmd :: Command }
              | Call Identifier [Expression] deriving (Show, Eq, Ord)
 
 data Declaration = Bi Identifier Expression
@@ -131,7 +131,7 @@ data Declaration = Bi Identifier Expression
 
 data Abstraction = Abs [Identifier] Command deriving (Show, Eq, Ord)
 
-data Closure = Clj { formals :: [Identifier], blk :: Command, local :: (Map.Map Identifier Location)} deriving (Show, Eq, Ord)
+data Closure = Clj { formals :: [Identifier], blk :: Command, local :: Environment} deriving (Show, Eq, Ord)
 
 data Identifier = I String deriving (Show, Eq, Ord)
 
@@ -140,21 +140,25 @@ data Keyword = KWSum | KWMul | KWSub | KWNot | KWAnd | KWEq | KWOr | KWLt | KWLe
              | KWCns | KWDec | KWBlk | KWBind | KWDSeq
              | KWCall Identifier Int deriving (Show, Eq, Ord)
  
-data Location = Loc Int | Sto Storable | Cl {cl :: Closure} deriving (Show, Eq, Ord) 
-type Storable = Either Bool Int 
+type Location = Int 
+data Bindable = Lo { loc :: Location } | Sto Storable | Cl { cl :: Closure} deriving (Show, Eq, Ord)
+data Storable = Sbool Bool | Sint Int deriving (Show, Eq, Ord)
+
+type Environment = Map.Map Identifier Bindable 
+type Store = Map.Map Location Storable
 
 data Value = Vb  { bval :: Bool } 
            | Vi  { ival :: Int } 
            | Vlp { beval :: BooleanExpression, cmdval :: Command} 
            | Vid { idval :: Identifier } 
            | Vcm { cval :: Command } 
-           | Vl  { lval :: Location } 
+           | Vbi { bival :: Bindable } 
            | Vls { lvls :: [Int] } 
-           | Lvls{ lvals :: [Location] } 
-           | Bng { xval :: Expression, itval :: Identifier} 
-           | Env { enval :: Map.Map Identifier Location} 
-           | En  { lcval :: Location, idtval :: Identifier} 
-           | Vclj { cljval :: Closure }
+           | Lvls{ lvals :: [Location] } -- TODO: change to Vlvls
+           | Bng { xval :: Expression, itval :: Identifier} -- TODO: change to Vbng
+           | Env { enval :: Environment} -- TODO: change to Venv
+           | En  { lcval :: Location, idtval :: Identifier}  -- TODO: change to Ven
+           | Vclj{ cljval :: Closure } 
            | Vabs{ absval :: Abstraction } deriving (Show, Eq)
 
 }

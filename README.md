@@ -12,4 +12,5 @@ o executavel do repl para a linguagem imp estara disponivel na pasta dist\build\
 o executavel dos testes rodados estara disponivel na pasta dist\build\p#tests\
 
 # TODO
-- implementar bindable values: integer, boolean ou location
+- criar testes para o parser com o exemplo dos slides 25, 26
+- implementar parser para o conteudo do slide 76
