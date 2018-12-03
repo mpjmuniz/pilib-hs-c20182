@@ -29,7 +29,7 @@ import qualified Data.Map.Strict as Map
     '&&'    {TokenAnd}
     '||'    {TokenOr}
     ':='    {TokenAssign}
-    id     {TokenVarId $$}
+    id      {TokenVarId $$}
     var     {TokenVar}
     let     {TokenLet}
     in      {TokenIn}
@@ -38,6 +38,7 @@ import qualified Data.Map.Strict as Map
     '{'     {TokenLBrace}
     '}'     {TokenRBrace}
     ';'     {TokenSemiComma}
+    fn      {TokenFn}
 
 %right in
 %nonassoc '>' '<'
@@ -54,7 +55,7 @@ Sttmnt : Expr                       { E $1 }
 Expr : Aexpr                        { Ae $1 }
      | Bexpr                        { Be $1 }
      
-    	  
+    
 Aexpr : '-' Aexpr                   { Mul (N(-1)) $2 }
       | Aexpr '+' Aexpr             { Sum $1 $3 }
       | Aexpr '-' Aexpr             { Sub $1 $3 }
@@ -73,19 +74,25 @@ Bexpr : Aexpr '<' Aexpr             { Lt $1 $3 }
       | '(' Bexpr ')'               { $2 }
       | true                        { B True }
       | false                       { B False }
-	  
+
 
 Reference: Expr                     {Rf $1}
-	  
+
 Cmd : Identifier ':=' Expr                   {A $1 $3} 
     | while '(' Bexpr ')' do '{' Cmd '}'     {L $3 $7}
     | Cmd ';' Cmd                            {Cs $1 $3}
-	| let Dec in Cmd                         {Bl $2 $4}
+    | let Dec in Cmd                         {Bl $2 $4}
+    | Identifier '(' Expr ')'                {Call $1 [$3]}
+
 
 Identifier:  id                   {I $1}
 
 Dec:  var Identifier ':=' Reference   {Bi $2 $4}
+     |fn Identifier Abst               {Bn $2 $3}
      |Dec ';' Dec                     {Ds $1 $3}
+
+
+Abst : '(' Identifier ')' ':=' Cmd          {Abs [$2] $5}
 
 {
 parseError :: [Token] -> a

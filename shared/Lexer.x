@@ -29,6 +29,7 @@ tokens :-
   "||"	                        { \s  -> TokenOr}
   while                         { \s  -> TokenWhile}
   var                           { \s  -> TokenVar}
+  fn                            { \s  -> TokenFn}
   let                           { \s  -> TokenLet}
   in                            { \s  -> TokenIn}
   do                            { \s  -> TokenDo}
@@ -62,6 +63,7 @@ data Token = TokenVarId String
            | TokenOr
            | TokenVar
            | TokenLet
+           | TokenFn
            | TokenIn
            | TokenWhile
            | TokenDo
