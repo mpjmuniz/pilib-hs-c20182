@@ -115,15 +115,28 @@ testBlk = TestCase $ assertEqual "Block declaration test"
 declarationsTests = TestList [testRf, testDr, testVr, testBindOnly, testBindEnvs, testBlk]
 
 testAbs = TestCase $ assertEqual "Abstraction test"
-                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
-                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+                         (CmdPiAut (Map.fromList []) (Map.fromList []) [Vclj $ Clj [I "x"] (A (I "x") (Ae (N 4))) (Map.fromList [])] [] [])
+                         (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [Ab $ Abs [I "x"] (A (I "x") (Ae (N 4)))] [])
+
+testBindAbs = TestCase $ assertEqual "Bind Abstraction test"
+                         (CmdPiAut (Map.fromList []) (Map.fromList []) ([Env {enval = Map.fromList [(I "x",Cl {cl = Clj {formals = [I "y",I "z"], blk = A (I "x") (Ae (N 4)) , local = Map.fromList []}})]}]) [] [])
+                         (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [S $ D $ Bn (I "x") (Abs [I "y", I "z"] (A (I "x") (Ae (N 4))) )] [])
 
 testCall = TestCase $ assertEqual "Call test"
                          (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
-                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+                         (eval $ CmdPiAut (Map.fromList [(I "x",Cl {cl = Clj {formals = [I "y",I "z"], blk = Bl (Bi (I "x") (Rf (Ae (N 7)))) (A (I "x") (Ae (N 4))), local = Map.fromList []}})]) (Map.fromList []) [] [S $ C $ Call (I "x") [(Ae $ N 1), (Ae $ N 2)]] [])
 
-testClosure = TestCase $ assertEqual "Closure test"
-                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
-                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+abstractionsTests = TestList[testAbs, testBindAbs, testCall]
 
-abstractionsTests = TestList[testAbs, testCall, testClosure]
+evalStorableTest1 = TestCase $ assertEqual "eval Storable test" (Vi 4) (evalStorable $ Sint 4)
+evalStorableTest2 = TestCase $ assertEqual "eval Storable test 2" (Vb True) (evalStorable $ Sbool True)
+                        
+storeValueTest1 = TestCase $ assertEqual "store Value test" (Sint 4) (storeValue $ Vi 4)
+
+expressBindableTest1 = TestCase $ assertEqual "express bindable test" (Ae (N 4)) (expressBindable $ Sto (Sint 4))
+
+matchTest = TestCase $ assertEqual "match test" (Map.fromList [(I "x", Sto $ Sbool True), (I "y", Sto $ Sint 4)]) (match [I "x", I "y"] [Vb True, Vi 4])
+
+buildDeclTest = TestCase $ assertEqual "build decl test" (Ds (Bi (I "x") (Ae (N 4))) None) (buildDecl [(I "x", Sto $ Sint 4)])
+
+subTests = TestList[evalStorableTest1, evalStorableTest2, storeValueTest1, expressBindableTest1, matchTest, buildDeclTest]

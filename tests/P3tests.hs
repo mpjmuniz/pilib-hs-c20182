@@ -7,5 +7,6 @@ import Test.HUnit
 main :: IO ()
 main = do
     print "Abstractions tests"
+    cmd <- runTestTT subTests
     cmd <- runTestTT abstractionsTests
     print ""

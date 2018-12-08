@@ -132,20 +132,22 @@ data Command = A  Identifier Expression
              | Bl { decl :: Declaration, kmd :: Command }
              | Call Identifier [Expression] deriving (Show, Eq, Ord)
 
-data Declaration = Bi Identifier Expression
+data Declaration = None
+                 | Bi Identifier Expression
                  | Ds Declaration Declaration
                  | Bn Identifier Abstraction deriving (Show, Eq, Ord)
 
 data Abstraction = Abs [Identifier] Command deriving (Show, Eq, Ord)
 
-data Closure = Clj { formals :: [Identifier], blk :: Command, local :: Environment} deriving (Show, Eq, Ord)
+data Closure = Clj { formals :: [Identifier], blk :: Command, local :: Environment} 
+             | Cls { abstraction :: Abstraction, context :: Environment } deriving (Show, Eq, Ord)
 
 data Identifier = I String deriving (Show, Eq, Ord)
 
 data Keyword = KWSum | KWMul | KWSub | KWNot | KWAnd | KWEq | KWOr | KWLt | KWLe | KWGt | KWGe
              | KWAssign | KWLoop | KWRef
              | KWCns | KWDec | KWBlk | KWBind | KWDSeq
-             | KWCall Identifier Int deriving (Show, Eq, Ord)
+             | KWCall Identifier Int | KWBindAbs deriving (Show, Eq, Ord)
  
 type Location = Int 
 data Bindable = Lo { loc :: Location } | Sto Storable | Cl { cl :: Closure} deriving (Show, Eq, Ord)
