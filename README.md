@@ -12,5 +12,5 @@ o executavel do repl para a linguagem imp estara disponivel na pasta dist\build\
 o executavel dos testes rodados estara disponivel na pasta dist\build\p#tests\
 
 # TODO
-- criar testes para o parser com o exemplo dos slides 25, 26
 - implementar parser para o conteudo do slide 76
+- a partir da AST gerada pelo parser, testar o automato na função call
