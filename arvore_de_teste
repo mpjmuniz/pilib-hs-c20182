@@ -1,0 +1,1 @@
+C (Bl {decl = Bi (I "y") (Rf (Ae (N 0))), kmd = Bl {decl = Bn (I "f") (Abs [I "c",I "b",I "a"] (A (I "y") (Ae (Mul (Mul (Id (I "a")) (Id (I "b"))) (Id (I "c")))))), kmd = Call (I "f") [Ae (N 9),Ae (N 7),Ae (N 1)]}})
