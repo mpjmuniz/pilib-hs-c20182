@@ -26,6 +26,7 @@ tokens :-
   \>=                           { \s -> TokenMaiorIgual }
   \<=                           { \s -> TokenMenorIgual }
   \&&                           { \s  -> TokenAnd}
+  \,                            { \s  -> TokenComma}
   "||"	                        { \s  -> TokenOr}
   while                         { \s  -> TokenWhile}
   var                           { \s  -> TokenVar}
@@ -55,6 +56,7 @@ data Token = TokenVarId String
            | TokenRParen
            | TokenNot 
            | TokenInt Int
+           | TokenComma
            | TokenMaior
            | TokenMenor
            | TokenMaiorIgual

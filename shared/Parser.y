@@ -39,6 +39,7 @@ import qualified Data.Map.Strict as Map
     '}'     {TokenRBrace}
     ';'     {TokenSemiComma}
     fn      {TokenFn}
+    ','     {TokenComma}
 
 %right in
 %nonassoc '>' '<'
@@ -56,14 +57,18 @@ Expr : Aexpr                        { Ae $1 }
      | Bexpr                        { Be $1 }
      
     
+
+ListExpr: Expr                      {[$1]}
+        | ListExpr ',' Expr         {$3 : $1}
+
 Aexpr : '-' Aexpr                   { Mul (N(-1)) $2 }
       | Aexpr '+' Aexpr             { Sum $1 $3 }
       | Aexpr '-' Aexpr             { Sub $1 $3 }
       | Aexpr '*' Aexpr             { Mul $1 $3 }
       | '(' Aexpr ')'               { $2 }
-	  | Identifier                  { Id $1 }
+      | Identifier                  { Id $1 }
       | int                         { N $1 }
-	
+
 Bexpr : Aexpr '<' Aexpr             { Lt $1 $3 }
       | Aexpr '>' Aexpr             { Gt $1 $3 }
       | Aexpr '<=' Aexpr            { Le $1 $3 }
@@ -82,17 +87,21 @@ Cmd : Identifier ':=' Expr                   {A $1 $3}
     | while '(' Bexpr ')' do '{' Cmd '}'     {L $3 $7}
     | Cmd ';' Cmd                            {Cs $1 $3}
     | let Dec in Cmd                         {Bl $2 $4}
-    | Identifier '(' Expr ')'                {Call $1 [$3]}
+    | Identifier '(' ListExpr ')'                {Call $1 $3}
 
 
 Identifier:  id                   {I $1}
+
+ListIdentifier: Identifier                     {[$1]}
+              | ListIdentifier ',' Identifier  {$3 : $1}
+
 
 Dec:  var Identifier ':=' Reference   {Bi $2 $4}
      |fn Identifier Abst               {Bn $2 $3}
      |Dec ';' Dec                     {Ds $1 $3}
 
 
-Abst : '(' Identifier ')' ':=' Cmd          {Abs [$2] $5}
+Abst : '(' ListIdentifier ')' ':=' Cmd          {Abs $2 $5}
 
 {
 parseError :: [Token] -> a
