@@ -50,22 +50,16 @@ match' :: [Identifier] -> [Value] -> Environment -> Environment
 match' [] [] e = e
 match' f a e   = Map.union (Map.fromList $ zip f (map (\v -> bindValue v) a)) e 
 
-
 buildDecl' :: (Identifier, Bindable) -> Declaration -> Declaration
 buildDecl' (id, bin) d = Ds (Bi id (expressBindable bin)) d 
---Just (Ds (Bi (fst key) (expressBindable (snd key))) (buildDecl keys))
 
 buildDecl :: [(Identifier, Bindable)] -> Declaration
 buildDecl pairs = foldr buildDecl' None pairs
---buildDecl env = fromJust $ buildDecl' env
 
 {-
  - Evaluation function. Given an automata, it recursively evaluates the expression in it's control stack
  -}
-{-
-evalExp :: DeclPiAut -> DeclPiAut
-eval cpa@(DeclPiAut e s v c l)
--}
+
 eval :: CmdPiAut -> CmdPiAut
 eval cpa@(CmdPiAut {cnt = []}) = cpa
 eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
@@ -93,7 +87,10 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                       S (D (Ds dec1 dec2))         -> cpa{cnt = S (D dec1) : S (D dec2) : tail c}
                                       S (D (None))                 -> cpa{cnt = tail c}
                                       K KWNot                      -> cpa{cnt = tail c, val = Vb (not $ bval $ head v) : tail v}
-                                      S (E (Ae (Id id)))           -> cpa{cnt = tail c, val = evalStorable (lookup' (loc (lookup' id e)) s) : v} 
+                                      S (E (Ae (Id id)))           -> cpa{cnt = tail c, val = let bind = (lookup' id e) in case bind of 
+                                                                                                    Lo loc -> evalStorable (lookup' loc s) : v
+                                                                                                    Sto sto -> evalStorable sto : v
+                                                                                                    otherwise -> v} 
                                       S (D (Bi id exp))            -> cpa{cnt = S (E exp) : K KWBind : tail c, val = Vid id : v}
                                       S (D (Bn id abs))            -> cpa{cnt = Ab abs : K KWBindAbs : tail c, val = Vid id : v}
                                       S (C (Bl decl cmd))          -> cpa{cnt = S (D decl) : K KWDec : S (C cmd) : K KWBlk : tail c, val = Lvls l : v, locs = []}
@@ -107,8 +104,11 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                       K (KWCall id n)              -> cpa{cnt = let b = blk (cl (lookup' id e))
                                                                                     f = formals (cl (lookup' id e)) in
                                                                          (S $ C $ Bl (buildDecl (Map.toList (match f (take n v)))) b) : tail c, 
-                                                                    val = Env e : drop n v,
-                                                                    env = local (cl (lookup' id e))}
+                                                                    val = drop n v,
+                                                                    env = local (cl (lookup' id e)), locs = []}
+                                      K KWDec               -> cpa{cnt = tail c,
+                                                                    val = Env e : tail v,
+                                                                    env = Map.union (enval (head v)) e}
                                       x -> let (va:vb:vs) = v in case x of
                                            K KWSum               -> cpa{cnt = tail c, val = Vi (ival va + ival vb)  : vs}
                                            K KWSub               -> cpa{cnt = tail c, val = Vi (ival va - ival vb)  : vs}
@@ -128,17 +128,18 @@ eval cpa@(CmdPiAut e s v c l)  = eval $ case (head c) of
                                                                         val = case vs of
                                                                                 [] -> (Env (Map.fromList [(idval vb, bival va)])) : []
                                                                                 env:vls -> case env of
-                                                                                    Env map -> (Env (Map.insert (idval vb) (bival va) (enval env))) : vls 
-                                                                                    otherwise -> (Env (Map.fromList [(idval vb, bival va)])) : vs} 
+                                                                                    Env map -> case va of
+                                                                                        Vbi bivalue -> (Env (Map.insert (idval vb) bivalue (enval env))) : vls 
+                                                                                        otherwise   -> (Env (Map.insert (idval vb) (bindValue va) (enval env))) : vls 
+                                                                                    otherwise -> case va of
+                                                                                        Vbi bivalue -> (Env (Map.fromList [(idval vb, bivalue)])) : vs 
+                                                                                        otherwise   -> (Env (Map.fromList [(idval vb, (bindValue va))])) : vs} 
                                            K KWBindAbs           -> cpa{cnt = tail c,
                                                                         val = case vs of
                                                                                 [] -> (Env (Map.fromList [(idval vb, Cl $ cljval va)])) : []
                                                                                 env:vls -> case env of
                                                                                     Env map -> (Env (Map.insert (idval vb) (Cl (cljval va)) (enval env))) : vls 
                                                                                     otherwise -> (Env (Map.fromList [(idval vb, Cl (cljval va))])) : vs}
-                                           K KWDec               -> cpa{cnt = tail c,
-                                                                        val = Env e : tail v,
-                                                                        env = Map.union (enval va) e}
                                            K KWBlk               -> cpa{cnt = tail c,
                                                                         val = vs,
                                                                         env = enval va, 

@@ -1,0 +1,33 @@
+
+package: containers-0.6.0.1
+os: windows
+arch: x86_64
+compiler: ghc-8.4.3
+client: cabal-install-2.2.0.0
+dependencies: array-0.5.2.0 base-4.11.1.0 deepseq-1.4.3.0
+              ghc-prim-0.5.2.0
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: pilibhs-1
+os: windows
+arch: x86_64
+compiler: ghc-8.4.3
+client: cabal-install-2.2.0.0
+dependencies: array-0.5.2.0 base-4.11.1.0 containers-0.6.0.1
+              array-0.5.2.0 base-4.11.1.0 containers-0.6.0.1
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried
+
+package: pilibhs-1
+os: windows
+arch: x86_64
+compiler: ghc-8.4.3
+client: cabal-install-2.2.0.0
+dependencies: array-0.5.2.0 base-4.11.1.0 containers-0.6.0.1
+              array-0.5.2.0 base-4.11.1.0 containers-0.6.0.1
+install-outcome: InstallOk
+docs-outcome: NotTried
+tests-outcome: NotTried

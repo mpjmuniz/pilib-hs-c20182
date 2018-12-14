@@ -123,10 +123,14 @@ testBindAbs = TestCase $ assertEqual "Bind Abstraction test"
                          (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [S $ D $ Bn (I "x") (Abs [I "y", I "z"] (A (I "x") (Ae (N 4))) )] [])
 
 testCall = TestCase $ assertEqual "Call test"
-                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+                         (CmdPiAut (Map.fromList []) (Map.fromList [(1, Sint 4)]) [] [] [])
                          (eval $ CmdPiAut (Map.fromList [(I "x",Cl {cl = Clj {formals = [I "y",I "z"], blk = Bl (Bi (I "x") (Rf (Ae (N 7)))) (A (I "x") (Ae (N 4))), local = Map.fromList []}})]) (Map.fromList []) [] [S $ C $ Call (I "x") [(Ae $ N 1), (Ae $ N 2)]] [])
 
-abstractionsTests = TestList[testAbs, testBindAbs, testCall]
+fullTest = TestCase $ assertEqual "full test"
+                         (CmdPiAut (Map.fromList []) (Map.fromList []) [] [] [])
+                         (eval $ CmdPiAut (Map.fromList []) (Map.fromList []) [] [S $ C (Bl {decl = Bi (I "y") (Rf (Ae (N 0))), kmd = Bl {decl = Bn (I "f") (Abs [I "c",I "b",I "a"] (A (I "y") (Ae (Mul (Mul (Id (I "a")) (Id (I "b"))) (Id (I "c")))))), kmd = Call (I "f") [Ae (N 9),Ae (N 7),Ae (N 1)]}})] []) 
+
+abstractionsTests = TestList[testAbs, testBindAbs, testCall, fullTest]
 
 evalStorableTest1 = TestCase $ assertEqual "eval Storable test" (Vi 4) (evalStorable $ Sint 4)
 evalStorableTest2 = TestCase $ assertEqual "eval Storable test 2" (Vb True) (evalStorable $ Sbool True)
@@ -138,5 +142,6 @@ expressBindableTest1 = TestCase $ assertEqual "express bindable test" (Ae (N 4))
 matchTest = TestCase $ assertEqual "match test" (Map.fromList [(I "x", Sto $ Sbool True), (I "y", Sto $ Sint 4)]) (match [I "x", I "y"] [Vb True, Vi 4])
 
 buildDeclTest = TestCase $ assertEqual "build decl test" (Ds (Bi (I "x") (Ae (N 4))) None) (buildDecl [(I "x", Sto $ Sint 4)])
+buildDeclTest2 = TestCase $ assertEqual "build decl test 2" (Ds (Bi (I "x") (Ae (N 4))) (Ds (Bi (I "y") (Ae (N 2))) None)) (buildDecl [(I "x", Sto $ Sint 4), (I "y", Sto $ Sint 2)])
 
-subTests = TestList[evalStorableTest1, evalStorableTest2, storeValueTest1, expressBindableTest1, matchTest, buildDeclTest]
+subTests = TestList[evalStorableTest1, evalStorableTest2, storeValueTest1, expressBindableTest1, matchTest, buildDeclTest, buildDeclTest2]
