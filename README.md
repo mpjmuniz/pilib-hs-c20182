@@ -10,7 +10,3 @@ ou simplesmente
 `make`
 o executavel do repl para a linguagem imp estara disponivel na pasta dist\build\impterpreter\
 o executavel dos testes rodados estara disponivel na pasta dist\build\p#tests\
-
-# TODO
-- implementar parser para o conteudo do slide 76
-- a partir da AST gerada pelo parser, testar o automato na função call
